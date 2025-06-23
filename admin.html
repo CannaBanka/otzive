@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Админка отзывов Firebase</title>
+  <style>
+    body { font-family: Arial; max-width: 600px; margin: 30px auto; padding: 0 20px; }
+    h1 { text-align: center; }
+    .review { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+    .review strong { font-size: 1.1rem; }
+    button { margin-right: 5px; padding: 5px 10px; cursor: pointer; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h1>Админ панель - Модерация отзывов</h1>
+  <div id="pendingReviews"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDUs_53Iek1mKi2GcJCduz2N-d_3kWHW3o",
+      authDomain: "tets-c92b3.firebaseapp.com",
+      databaseURL: "https://tets-c92b3-default-rtdb.firebaseio.com",
+      projectId: "tets-c92b3",
+      storageBucket: "tets-c92b3.appspot.com",
+      messagingSenderId: "989700479323",
+      appId: "1:989700479323:web:80387b013848a140c2a27e"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const container = document.getElementById('pendingReviews');
+
+    function loadPending() {
+      db.ref('reviews').orderByChild('approved').equalTo(false).once('value', snapshot => {
+        container.innerHTML = '';
+        if (!snapshot.exists()) {
+          container.innerHTML = '<p>Новых отзывов нет.</p>';
+          return;
+        }
+        snapshot.forEach(childSnapshot => {
+          const key = childSnapshot.key;
+          const review = childSnapshot.val();
+
+          const div = document.createElement('div');
+          div.className = 'review';
+          div.innerHTML = `<strong>${review.name}</strong><p>${review.message}</p>
+            <button onclick="approve('${key}')">Одобрить</button>
+            <button onclick="remove('${key}')">Удалить</button>`;
+          container.appendChild(div);
+        });
+      });
+    }
+
+    function approve(key) {
+      db.ref('reviews/' + key).update({ approved: true }).then(() => {
+        loadPending();
+      });
+    }
+
+    function remove(key) {
+      db.ref('reviews/' + key).remove().then(() => {
+        loadPending();
+      });
+    }
+
+    loadPending();
+  </script>
+</body>
+</html>
