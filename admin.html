@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Админка отзывов</title>
+  <title>Адмінка відгуків</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -82,11 +82,11 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h1>Админ панель - Модерация отзывов</h1>
-  <div id="reviewsContainer">Загрузка отзывов...</div>
+  <h1>Адмін панель - Модерація відгуків</h1>
+  <div id="reviewsContainer">Завантаження відгуків...</div>
 
   <script>
-    // Вставь сюда свой конфиг Firebase из проекта
+    // Встав свій конфіг Firebase з проекту
     const firebaseConfig = {
       apiKey: "AIzaSyDUs_53Iek1mKi2GcJCduz2N-d_3kWHW3o",
       authDomain: "tets-c92b3.firebaseapp.com",
@@ -122,7 +122,7 @@
     function renderReviews(reviews) {
       container.innerHTML = '';
       if (!reviews || Object.keys(reviews).length === 0) {
-        container.innerHTML = '<p>Нет отзывов для модерации.</p>';
+        container.innerHTML = '<p>Немає відгуків для модерації.</p>';
         return;
       }
       for (const key in reviews) {
@@ -134,12 +134,12 @@
           <strong>${escapeHtml(review.name)}</strong> 
           <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
           <p>${escapeHtml(review.message)}</p>
-          <p><b>Статус:</b> ${review.approved ? 'Одобрен' : 'Ожидает модерации'}</p>
+          <p><b>Статус:</b> ${review.approved ? 'Одобрено' : 'Очікує модерації'}</p>
         `;
 
         if (!review.approved) {
           const approveBtn = document.createElement('button');
-          approveBtn.textContent = 'Одобрить';
+          approveBtn.textContent = 'Одобрити';
           approveBtn.className = 'approve';
           approveBtn.onclick = () => {
             db.ref('reviews/' + key).update({ approved: true });
@@ -147,20 +147,20 @@
           div.appendChild(approveBtn);
 
           const rejectBtn = document.createElement('button');
-          rejectBtn.textContent = 'Отклонить';
+          rejectBtn.textContent = 'Відхилити';
           rejectBtn.className = 'delete';
           rejectBtn.onclick = () => {
-            if (confirm('Отклонить и удалить этот отзыв?')) {
+            if (confirm('Відхилити та видалити цей відгук?')) {
               db.ref('reviews/' + key).remove();
             }
           };
           div.appendChild(rejectBtn);
         } else {
           const deleteBtn = document.createElement('button');
-          deleteBtn.textContent = 'Удалить';
+          deleteBtn.textContent = 'Видалити';
           deleteBtn.className = 'delete';
           deleteBtn.onclick = () => {
-            if (confirm('Удалить этот отзыв?')) {
+            if (confirm('Видалити цей відгук?')) {
               db.ref('reviews/' + key).remove();
             }
           };
