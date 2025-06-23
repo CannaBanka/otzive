@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Отзывы с Firebase и рейтингом</title>
+  <title>Відгуки з Firebase та рейтингом</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -85,23 +85,23 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h1>Оставьте отзыв</h1>
+  <h1>Залиште відгук</h1>
   <form id="reviewForm">
-    <input type="text" id="name" placeholder="Ваше имя" required autocomplete="name" />
-    <textarea id="message" placeholder="Ваш отзыв" required></textarea>
-    <label for="rating">Рейтинг (звезды):</label>
+    <input type="text" id="name" placeholder="Ваше ім'я" required autocomplete="name" />
+    <textarea id="message" placeholder="Ваш відгук" required></textarea>
+    <label for="rating">Рейтинг (зірки):</label>
     <select id="rating" required aria-label="Рейтинг">
-      <option value="" disabled selected>Выберите рейтинг</option>
+      <option value="" disabled selected>Оберіть рейтинг</option>
       <option value="1">1 ★</option>
       <option value="2">2 ★★</option>
       <option value="3">3 ★★★</option>
       <option value="4">4 ★★★★</option>
       <option value="5">5 ★★★★★</option>
     </select>
-    <button type="submit">Отправить</button>
+    <button type="submit">Надіслати</button>
   </form>
 
-  <h2>Одобренные отзывы</h2>
+  <h2>Схвалені відгуки</h2>
   <div id="approvedReviews"></div>
 
   <script>
@@ -127,7 +127,7 @@
       const message = document.getElementById('message').value.trim();
       const rating = parseInt(document.getElementById('rating').value);
       if (!name || !message || !rating) {
-        alert('Пожалуйста, заполните все поля.');
+        alert('Будь ласка, заповніть всі поля.');
         return;
       }
 
@@ -140,7 +140,7 @@
         timestamp: Date.now()
       });
 
-      alert('Спасибо за отзыв! Он будет опубликован после модерации.');
+      alert('Дякуємо за відгук! Він буде опублікований після модерації.');
       reviewForm.reset();
     });
 
