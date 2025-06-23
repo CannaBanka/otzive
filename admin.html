@@ -86,7 +86,7 @@
   <div id="reviewsContainer">Загрузка отзывов...</div>
 
   <script>
-    // Конфиг Firebase — вставь сюда свой из проекта
+    // Вставь сюда свой конфиг Firebase из проекта
     const firebaseConfig = {
       apiKey: "AIzaSyDUs_53Iek1mKi2GcJCduz2N-d_3kWHW3o",
       authDomain: "tets-c92b3.firebaseapp.com",
@@ -104,6 +104,19 @@
 
     function stars(count) {
       return '★'.repeat(count) + '☆'.repeat(5 - count);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/[&<>"']/g, function(m) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[m];
+      });
     }
 
     function renderReviews(reviews) {
@@ -124,7 +137,6 @@
           <p><b>Статус:</b> ${review.approved ? 'Одобрен' : 'Ожидает модерации'}</p>
         `;
 
-        // Кнопки
         if (!review.approved) {
           const approveBtn = document.createElement('button');
           approveBtn.textContent = 'Одобрить';
@@ -133,6 +145,16 @@
             db.ref('reviews/' + key).update({ approved: true });
           };
           div.appendChild(approveBtn);
+
+          const rejectBtn = document.createElement('button');
+          rejectBtn.textContent = 'Отклонить';
+          rejectBtn.className = 'delete';
+          rejectBtn.onclick = () => {
+            if (confirm('Отклонить и удалить этот отзыв?')) {
+              db.ref('reviews/' + key).remove();
+            }
+          };
+          div.appendChild(rejectBtn);
         } else {
           const deleteBtn = document.createElement('button');
           deleteBtn.textContent = 'Удалить';
@@ -149,24 +171,9 @@
       }
     }
 
-    // Слушаем изменения в базе, чтобы обновлять список
     db.ref('reviews').on('value', snapshot => {
       renderReviews(snapshot.val());
     });
-
-    // Простая функция для безопасности вывода текста
-    function escapeHtml(text) {
-      if (!text) return '';
-      return text.replace(/[&<>"']/g, function(m) {
-        return {
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;'
-        }[m];
-      });
-    }
   </script>
 </body>
 </html>
