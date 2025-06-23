@@ -52,6 +52,7 @@
       padding: 12px 15px;
       margin: 12px 0;
       background-color: #fafafa;
+      position: relative;
     }
     .review strong {
       font-size: 1.1rem;
@@ -63,6 +64,14 @@
       font-size: 1.3rem;
       margin-left: 8px;
       vertical-align: middle;
+      user-select: none;
+    }
+    .review-date {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 0.9rem;
+      color: #666;
       user-select: none;
     }
 
@@ -78,6 +87,10 @@
       .review {
         padding: 15px;
         font-size: 1.1rem;
+      }
+      .review-date {
+        top: 18px;
+        right: 18px;
       }
     }
   </style>
@@ -148,6 +161,14 @@
       return '★'.repeat(count) + '☆'.repeat(5 - count);
     }
 
+    function getFormattedDate(timestamp) {
+      const date = new Date(timestamp);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      return `${day}.${month}.${year}`;
+    }
+
     function showApprovedReviews() {
       db.ref('reviews').orderByChild('approved').equalTo(true).on('value', snapshot => {
         approvedReviewsDiv.innerHTML = '';
@@ -155,9 +176,13 @@
           const review = childSnapshot.val();
           const div = document.createElement('div');
           div.className = 'review';
-          div.innerHTML = `<strong>${review.name}</strong> 
+          const formattedDate = getFormattedDate(review.timestamp);
+          div.innerHTML = `
+            <strong>${review.name}</strong>
             <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
-            <p>${review.message}</p>`;
+            <span class="review-date">${formattedDate}</span>
+            <p>${review.message}</p>
+          `;
           approvedReviewsDiv.appendChild(div);
         });
       });
@@ -167,3 +192,4 @@
   </script>
 </body>
 </html>
+
