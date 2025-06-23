@@ -2,18 +2,81 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Админка отзывов с удалением и рейтингом</title>
   <style>
-    body { font-family: Arial; max-width: 600px; margin: 30px auto; padding: 0 20px; }
-    h1 { text-align: center; }
-    .review { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
-    .review strong { font-size: 1.1rem; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 0 15px;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .review {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin: 12px 0;
+      background-color: #fafafa;
+    }
+    .review strong {
+      font-size: 1.1rem;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
     .stars {
       color: gold;
-      font-size: 1.2rem;
-      margin-left: 10px;
+      font-size: 1.3rem;
+      margin-left: 8px;
+      vertical-align: middle;
+      user-select: none;
     }
-    button { margin-right: 5px; padding: 5px 10px; cursor: pointer; }
+    p {
+      margin: 8px 0;
+    }
+    button {
+      margin-right: 8px;
+      margin-top: 8px;
+      padding: 8px 14px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+    button:hover {
+      opacity: 0.85;
+    }
+    button.approve {
+      background-color: #4caf50;
+      color: white;
+    }
+    button.delete {
+      background-color: #e53935;
+      color: white;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+        font-size: 18px;
+      }
+      button {
+        padding: 12px 18px;
+        font-size: 1.1rem;
+        margin-right: 5px;
+      }
+      .review {
+        padding: 15px;
+        font-size: 1.1rem;
+      }
+    }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -59,28 +122,5 @@
             <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
             <p>${review.message}</p>
             <p><b>Статус:</b> ${review.approved ? 'Одобрен' : 'Ожидает модерации'}</p>
-            ${review.approved ? '' : `<button onclick="approve('${key}')">Одобрить</button>`}
-            <button onclick="remove('${key}')">Удалить</button>`;
-          container.appendChild(div);
-        });
-      });
-    }
+            ${
 
-    function approve(key) {
-      db.ref('reviews/' + key).update({ approved: true }).then(() => {
-        loadReviews();
-      });
-    }
-
-    function remove(key) {
-      if (confirm('Вы уверены, что хотите удалить этот отзыв?')) {
-        db.ref('reviews/' + key).remove().then(() => {
-          loadReviews();
-        });
-      }
-    }
-
-    loadReviews();
-  </script>
-</body>
-</html>
