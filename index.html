@@ -2,14 +2,20 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Отзывы с Firebase</title>
+  <title>Отзывы с Firebase и рейтингом</title>
   <style>
     body { font-family: Arial; max-width: 600px; margin: 30px auto; padding: 0 20px; }
     h1, h2 { text-align: center; }
-    form input, form textarea { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; font-size: 1rem; }
+    form input, form textarea, form select {
+      width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; font-size: 1rem;
+    }
     form button { padding: 10px 15px; font-size: 1rem; cursor: pointer; }
     .review { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
     .review strong { font-size: 1.1rem; }
+    .stars {
+      color: gold;
+      font-size: 1.2rem;
+    }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -19,6 +25,15 @@
   <form id="reviewForm">
     <input type="text" id="name" placeholder="Ваше имя" required />
     <textarea id="message" placeholder="Ваш отзыв" required></textarea>
+    <label for="rating">Рейтинг (звезды):</label>
+    <select id="rating" required>
+      <option value="" disabled selected>Выберите рейтинг</option>
+      <option value="1">1 ★</option>
+      <option value="2">2 ★★</option>
+      <option value="3">3 ★★★</option>
+      <option value="4">4 ★★★★</option>
+      <option value="5">5 ★★★★★</option>
+    </select>
     <button type="submit">Отправить</button>
   </form>
 
@@ -46,7 +61,8 @@
       e.preventDefault();
       const name = document.getElementById('name').value.trim();
       const message = document.getElementById('message').value.trim();
-      if (!name || !message) {
+      const rating = parseInt(document.getElementById('rating').value);
+      if (!name || !message || !rating) {
         alert('Пожалуйста, заполните все поля.');
         return;
       }
@@ -55,6 +71,7 @@
       newReviewRef.set({
         name,
         message,
+        rating,
         approved: false,
         timestamp: Date.now()
       });
@@ -63,6 +80,10 @@
       reviewForm.reset();
     });
 
+    function stars(count) {
+      return '★'.repeat(count) + '☆'.repeat(5 - count);
+    }
+
     function showApprovedReviews() {
       db.ref('reviews').orderByChild('approved').equalTo(true).on('value', snapshot => {
         approvedReviewsDiv.innerHTML = '';
@@ -70,7 +91,9 @@
           const review = childSnapshot.val();
           const div = document.createElement('div');
           div.className = 'review';
-          div.innerHTML = `<strong>${review.name}</strong><p>${review.message}</p>`;
+          div.innerHTML = `<strong>${review.name}</strong> 
+            <span class="stars" title="${review.rating}">${stars(review.rating)}</span>
+            <p>${review.message}</p>`;
           approvedReviewsDiv.appendChild(div);
         });
       });
