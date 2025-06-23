@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Админка отзывов с удалением и рейтингом</title>
+  <title>Админка отзывов</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -83,9 +83,10 @@
 </head>
 <body>
   <h1>Админ панель - Модерация отзывов</h1>
-  <div id="pendingReviews"></div>
+  <div id="reviewsContainer">Загрузка отзывов...</div>
 
   <script>
+    // Конфиг Firebase — вставь сюда свой из проекта
     const firebaseConfig = {
       apiKey: "AIzaSyDUs_53Iek1mKi2GcJCduz2N-d_3kWHW3o",
       authDomain: "tets-c92b3.firebaseapp.com",
@@ -99,28 +100,74 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const container = document.getElementById('pendingReviews');
+    const container = document.getElementById('reviewsContainer');
 
     function stars(count) {
       return '★'.repeat(count) + '☆'.repeat(5 - count);
     }
 
-    function loadReviews() {
-      db.ref('reviews').orderByChild('timestamp').once('value', snapshot => {
-        container.innerHTML = '';
-        if (!snapshot.exists()) {
-          container.innerHTML = '<p>Отзывов нет.</p>';
-          return;
-        }
-        snapshot.forEach(childSnapshot => {
-          const key = childSnapshot.key;
-          const review = childSnapshot.val();
+    function renderReviews(reviews) {
+      container.innerHTML = '';
+      if (!reviews || Object.keys(reviews).length === 0) {
+        container.innerHTML = '<p>Нет отзывов для модерации.</p>';
+        return;
+      }
+      for (const key in reviews) {
+        const review = reviews[key];
+        const div = document.createElement('div');
+        div.className = 'review';
 
-          const div = document.createElement('div');
-          div.className = 'review';
-          div.innerHTML = `<strong>${review.name}</strong> 
-            <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
-            <p>${review.message}</p>
-            <p><b>Статус:</b> ${review.approved ? 'Одобрен' : 'Ожидает модерации'}</p>
-            ${
+        div.innerHTML = `
+          <strong>${escapeHtml(review.name)}</strong> 
+          <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
+          <p>${escapeHtml(review.message)}</p>
+          <p><b>Статус:</b> ${review.approved ? 'Одобрен' : 'Ожидает модерации'}</p>
+        `;
+
+        // Кнопки
+        if (!review.approved) {
+          const approveBtn = document.createElement('button');
+          approveBtn.textContent = 'Одобрить';
+          approveBtn.className = 'approve';
+          approveBtn.onclick = () => {
+            db.ref('reviews/' + key).update({ approved: true });
+          };
+          div.appendChild(approveBtn);
+        } else {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.textContent = 'Удалить';
+          deleteBtn.className = 'delete';
+          deleteBtn.onclick = () => {
+            if (confirm('Удалить этот отзыв?')) {
+              db.ref('reviews/' + key).remove();
+            }
+          };
+          div.appendChild(deleteBtn);
+        }
+
+        container.appendChild(div);
+      }
+    }
+
+    // Слушаем изменения в базе, чтобы обновлять список
+    db.ref('reviews').on('value', snapshot => {
+      renderReviews(snapshot.val());
+    });
+
+    // Простая функция для безопасности вывода текста
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/[&<>"']/g, function(m) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[m];
+      });
+    }
+  </script>
+</body>
+</html>
 
