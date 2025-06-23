@@ -2,12 +2,17 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Админка отзывов Firebase</title>
+  <title>Админка отзывов с удалением и рейтингом</title>
   <style>
     body { font-family: Arial; max-width: 600px; margin: 30px auto; padding: 0 20px; }
     h1 { text-align: center; }
     .review { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
     .review strong { font-size: 1.1rem; }
+    .stars {
+      color: gold;
+      font-size: 1.2rem;
+      margin-left: 10px;
+    }
     button { margin-right: 5px; padding: 5px 10px; cursor: pointer; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -33,11 +38,15 @@
 
     const container = document.getElementById('pendingReviews');
 
-    function loadPending() {
-      db.ref('reviews').orderByChild('approved').equalTo(false).once('value', snapshot => {
+    function stars(count) {
+      return '★'.repeat(count) + '☆'.repeat(5 - count);
+    }
+
+    function loadReviews() {
+      db.ref('reviews').orderByChild('timestamp').once('value', snapshot => {
         container.innerHTML = '';
         if (!snapshot.exists()) {
-          container.innerHTML = '<p>Новых отзывов нет.</p>';
+          container.innerHTML = '<p>Отзывов нет.</p>';
           return;
         }
         snapshot.forEach(childSnapshot => {
@@ -46,8 +55,11 @@
 
           const div = document.createElement('div');
           div.className = 'review';
-          div.innerHTML = `<strong>${review.name}</strong><p>${review.message}</p>
-            <button onclick="approve('${key}')">Одобрить</button>
+          div.innerHTML = `<strong>${review.name}</strong> 
+            <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
+            <p>${review.message}</p>
+            <p><b>Статус:</b> ${review.approved ? 'Одобрен' : 'Ожидает модерации'}</p>
+            ${review.approved ? '' : `<button onclick="approve('${key}')">Одобрить</button>`}
             <button onclick="remove('${key}')">Удалить</button>`;
           container.appendChild(div);
         });
@@ -56,17 +68,19 @@
 
     function approve(key) {
       db.ref('reviews/' + key).update({ approved: true }).then(() => {
-        loadPending();
+        loadReviews();
       });
     }
 
     function remove(key) {
-      db.ref('reviews/' + key).remove().then(() => {
-        loadPending();
-      });
+      if (confirm('Вы уверены, что хотите удалить этот отзыв?')) {
+        db.ref('reviews/' + key).remove().then(() => {
+          loadReviews();
+        });
+      }
     }
 
-    loadPending();
+    loadReviews();
   </script>
 </body>
 </html>
