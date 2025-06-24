@@ -61,6 +61,18 @@
       background-color: #e53935;
       color: white;
     }
+    button.save-date {
+      background-color: #1976d2;
+      color: white;
+    }
+    input[type="datetime-local"] {
+      width: 100%;
+      margin: 5px 0;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
 
     @media (max-width: 480px) {
       body {
@@ -86,7 +98,6 @@
   <div id="reviewsContainer">Завантаження відгуків...</div>
 
   <script>
-    // Встав свій конфіг Firebase з проекту
     const firebaseConfig = {
       apiKey: "AIzaSyDUs_53Iek1mKi2GcJCduz2N-d_3kWHW3o",
       authDomain: "tets-c92b3.firebaseapp.com",
@@ -108,7 +119,7 @@
 
     function escapeHtml(text) {
       if (!text) return '';
-      return text.replace(/[&<>"']/g, function(m) {
+      return text.replace(/[&<>"']/g, function (m) {
         return {
           '&': '&amp;',
           '<': '&lt;',
@@ -125,17 +136,36 @@
         container.innerHTML = '<p>Немає відгуків для модерації.</p>';
         return;
       }
+
       for (const key in reviews) {
         const review = reviews[key];
         const div = document.createElement('div');
         div.className = 'review';
 
+        const date = review.timestamp ? new Date(review.timestamp) : new Date();
+        const formattedDate = date.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+
         div.innerHTML = `
-          <strong>${escapeHtml(review.name)}</strong> 
+          <strong>${escapeHtml(review.name)}</strong>
           <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
           <p>${escapeHtml(review.message)}</p>
           <p><b>Статус:</b> ${review.approved ? 'Одобрено' : 'Очікує модерації'}</p>
+          <label>Дата та час:</label>
+          <input type="datetime-local" value="${formattedDate}" id="dt-${key}" />
         `;
+
+        const saveDateBtn = document.createElement('button');
+        saveDateBtn.textContent = 'Зберегти дату';
+        saveDateBtn.className = 'save-date';
+        saveDateBtn.onclick = () => {
+          const newDateValue = document.getElementById(`dt-${key}`).value;
+          if (newDateValue) {
+            const newTimestamp = new Date(newDateValue).getTime();
+            db.ref('reviews/' + key).update({ timestamp: newTimestamp });
+            alert('Дата оновлена!');
+          }
+        };
+        div.appendChild(saveDateBtn);
 
         if (!review.approved) {
           const approveBtn = document.createElement('button');
@@ -177,4 +207,3 @@
   </script>
 </body>
 </html>
-
