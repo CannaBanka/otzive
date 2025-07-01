@@ -68,6 +68,11 @@
       margin-left: 8px;
       vertical-align: middle;
       user-select: none;
+      display: inline-block;
+      transition: transform 0.2s ease;
+    }
+    .stars:hover {
+      transform: scale(1.15);
     }
     .review-date {
       position: absolute;
@@ -85,7 +90,7 @@
     .stats {
       text-align: center;
       font-size: 1.1rem;
-      margin: 20px 0;
+      margin: 20px 0 10px;
     }
     #themeToggle {
       margin: 20px auto;
@@ -97,6 +102,21 @@
       border-radius: 6px;
       font-size: 1rem;
       cursor: pointer;
+    }
+
+    .rating-bar {
+      height: 12px;
+      background-color: #ccc;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 10px auto 20px;
+      max-width: 300px;
+    }
+    .rating-fill {
+      height: 100%;
+      background-color: gold;
+      width: 0;
+      transition: width 0.4s ease;
     }
 
     /* Темна тема */
@@ -120,6 +140,12 @@
     }
     .dark-theme form button:hover {
       background-color: #2e7d32;
+    }
+    .dark-theme .rating-bar {
+      background-color: #444;
+    }
+    .dark-theme .rating-fill {
+      background-color: #fbc02d;
     }
 
     @media (max-width: 480px) {
@@ -165,6 +191,15 @@
   </form>
 
   <div class="stats" id="ratingStats"></div>
+  <div class="rating-bar"><div class="rating-fill" id="ratingFill"></div></div>
+
+  <label for="filterRating">Фільтрувати за рейтингом:</label>
+  <select id="filterRating">
+    <option value="all">Усі рейтинги</option>
+    <option value="5">Тільки 5 ★</option>
+    <option value="4">4+ ★</option>
+    <option value="3">3+ ★</option>
+  </select>
 
   <h2>Відгуки</h2>
   <div id="approvedReviews"></div>
@@ -186,6 +221,8 @@
     const reviewForm = document.getElementById('reviewForm');
     const approvedReviewsDiv = document.getElementById('approvedReviews');
     const ratingStatsDiv = document.getElementById('ratingStats');
+    const ratingFill = document.getElementById('ratingFill');
+    const filterRating = document.getElementById('filterRating');
 
     reviewForm.addEventListener('submit', e => {
       e.preventDefault();
@@ -228,15 +265,25 @@
     }
 
     function showApprovedReviews() {
+      const filterValue = filterRating?.value || 'all';
       db.ref('reviews').orderByChild('approved').equalTo(true).on('value', snapshot => {
         approvedReviewsDiv.innerHTML = '';
         ratingStatsDiv.innerHTML = '';
+        ratingFill.style.width = '0%';
 
         let totalRating = 0;
         let count = 0;
 
         snapshot.forEach(childSnapshot => {
           const review = childSnapshot.val();
+          const passesFilter =
+            filterValue === 'all' ||
+            (filterValue === '5' && review.rating === 5) ||
+            (filterValue === '4' && review.rating >= 4) ||
+            (filterValue === '3' && review.rating >= 3);
+
+          if (!passesFilter) return;
+
           totalRating += review.rating;
           count++;
 
@@ -255,19 +302,26 @@
 
         if (count > 0) {
           const average = (totalRating / count).toFixed(1);
-          ratingStatsDiv.innerHTML = `📊 Усього відгуків: <strong>${count}</strong> | Середній рейтинг: <strong>${average} ★</strong>`;
+          ratingStatsDiv.innerHTML = `📊 Відгуків: <strong>${count}</strong> | Середній рейтинг: <strong>${average} ★</strong>`;
+          const percent = (average / 5) * 100;
+          ratingFill.style.width = `${percent}%`;
         } else {
-          ratingStatsDiv.innerHTML = 'Ще немає опублікованих відгуків.';
+          ratingStatsDiv.innerHTML = 'Немає відгуків для цього фільтру.';
         }
       });
     }
 
-    // Темна тема toggle
+    // Темна тема toggle + збереження
     const themeToggle = document.getElementById('themeToggle');
+    if (localStorage.getItem('theme') === 'dark') {
+      document.body.classList.add('dark-theme');
+    }
     themeToggle.addEventListener('click', () => {
       document.body.classList.toggle('dark-theme');
+      localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
     });
 
+    filterRating.addEventListener('change', showApprovedReviews);
     showApprovedReviews();
   </script>
 </body>
