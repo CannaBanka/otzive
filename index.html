@@ -74,6 +74,11 @@
       color: #666;
       user-select: none;
     }
+    .review img {
+      max-width: 100%;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
 
     @media (max-width: 480px) {
       body {
@@ -111,6 +116,7 @@
       <option value="4">4 ★★★★</option>
       <option value="5">5 ★★★★★</option>
     </select>
+    <input type="url" id="photoUrl" placeholder="Посилання на фото (опціонально)" />
     <button type="submit">Надіслати</button>
   </form>
 
@@ -139,8 +145,10 @@
       const name = document.getElementById('name').value.trim();
       const message = document.getElementById('message').value.trim();
       const rating = parseInt(document.getElementById('rating').value);
+      const photoUrl = document.getElementById('photoUrl').value.trim();
+
       if (!name || !message || !rating) {
-        alert('Будь ласка, заповніть всі поля.');
+        alert('Будь ласка, заповніть всі поля, окрім фото.');
         return;
       }
 
@@ -149,6 +157,7 @@
         name,
         message,
         rating,
+        photoUrl: photoUrl || null,
         approved: false,
         timestamp: Date.now()
       });
@@ -184,6 +193,7 @@
             <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
             <span class="review-date">${formattedDate}</span>
             <p>${review.message}</p>
+            ${review.photoUrl ? `<img src="${review.photoUrl}" alt="Фото від ${review.name}" />` : ''}
           `;
           approvedReviewsDiv.appendChild(div);
         });
