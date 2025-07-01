@@ -65,15 +65,8 @@
       background-color: #1976d2;
       color: white;
     }
-    input[type="datetime-local"] {
-      width: 100%;
-      margin: 5px 0;
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 1rem;
-    }
-    input[type="text"].photo-url {
+    input[type="datetime-local"],
+    input.photo-url {
       width: 100%;
       margin: 5px 0 10px 0;
       padding: 6px;
@@ -82,17 +75,23 @@
       font-size: 1rem;
       box-sizing: border-box;
     }
-
-    /* Нові стилі для статусу */
-    .status-approved {
-      color: #2e7d32; /* темно-зелений */
-      font-weight: bold;
+    img.review-photo {
+      max-width: 100%;
+      max-height: 200px;
+      display: block;
+      margin: 10px 0;
+      border-radius: 8px;
+      object-fit: contain;
+      border: 1px solid #ccc;
     }
     .status-pending {
-      color: #d32f2f; /* яскраво-червоний */
+      color: #e67e22;
       font-weight: bold;
     }
-
+    .status-approved {
+      color: #4caf50;
+      font-weight: bold;
+    }
     @media (max-width: 480px) {
       body {
         padding: 10px;
@@ -164,23 +163,22 @@
         const date = review.timestamp ? new Date(review.timestamp) : new Date();
         const formattedDate = date.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
 
-        // Поле для фото (URL)
-        const photoUrl = review.photoUrl ? escapeHtml(review.photoUrl) : '';
+        const photoUrl = review.photoUrl || '';
 
         div.innerHTML = `
           <strong>${escapeHtml(review.name)}</strong>
           <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
           <p>${escapeHtml(review.message)}</p>
+          ${photoUrl ? `<img src="${photoUrl}" alt="Фото відгука" class="review-photo" />` : ''}
           <p><b>Статус:</b> <span class="${review.approved ? 'status-approved' : 'status-pending'}">
             ${review.approved ? 'Одобрено' : 'Очікує модерації'}
           </span></p>
           <label>Дата та час:</label>
           <input type="datetime-local" value="${formattedDate}" id="dt-${key}" />
           <label>Посилання на фото:</label>
-          <input type="text" class="photo-url" id="photo-${key}" placeholder="Вставте URL фото" value="${photoUrl}" />
+          <input type="text" class="photo-url" id="photo-${key}" placeholder="Вставте URL фото" value="${escapeHtml(photoUrl)}" />
         `;
 
-        // Кнопка збереження дати
         const saveDateBtn = document.createElement('button');
         saveDateBtn.textContent = 'Зберегти дату';
         saveDateBtn.className = 'save-date';
@@ -194,7 +192,6 @@
         };
         div.appendChild(saveDateBtn);
 
-        // Кнопка збереження фото
         const savePhotoBtn = document.createElement('button');
         savePhotoBtn.textContent = 'Зберегти фото';
         savePhotoBtn.className = 'save-date';
@@ -211,7 +208,6 @@
           approveBtn.className = 'approve';
           approveBtn.onclick = () => {
             db.ref('reviews/' + key).update({ approved: true });
-            alert('Відгук одобрено!');
           };
           div.appendChild(approveBtn);
 
@@ -246,3 +242,4 @@
   </script>
 </body>
 </html>
+
