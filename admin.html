@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Адмінка — модерація відгуків</title>
+  <title>Адмінка відгуків</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 800px;
+      max-width: 600px;
       margin: 20px auto;
       padding: 0 15px;
       font-size: 16px;
@@ -18,60 +18,84 @@
       margin-bottom: 20px;
     }
     .review {
-      border: 1px solid #ccc;
+      border: 1px solid #ddd;
       border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
-      background-color: #f9f9f9;
-      position: relative;
+      padding: 12px 15px;
+      margin: 12px 0;
+      background-color: #fafafa;
     }
     .review strong {
       font-size: 1.1rem;
-      display: block;
-      margin-bottom: 4px;
-    }
-    .review p {
-      margin: 10px 0;
+      display: inline-block;
+      margin-bottom: 6px;
     }
     .stars {
       color: gold;
       font-size: 1.3rem;
+      margin-left: 8px;
+      vertical-align: middle;
+      user-select: none;
     }
-    .review-date {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      font-size: 0.9rem;
-      color: #666;
-    }
-    .review img {
-      max-width: 100%;
-      margin-top: 10px;
-      border-radius: 6px;
+    p {
+      margin: 8px 0;
     }
     button {
-      margin-right: 10px;
+      margin-right: 8px;
+      margin-top: 8px;
       padding: 8px 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
       font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
     }
-    .approve {
+    button:hover {
+      opacity: 0.85;
+    }
+    button.approve {
       background-color: #4caf50;
       color: white;
     }
-    .delete {
-      background-color: #f44336;
+    button.delete {
+      background-color: #e53935;
       color: white;
+    }
+    button.save-date {
+      background-color: #1976d2;
+      color: white;
+    }
+    input[type="datetime-local"] {
+      width: 100%;
+      margin: 5px 0;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+        font-size: 18px;
+      }
+      button {
+        padding: 12px 18px;
+        font-size: 1.1rem;
+        margin-right: 5px;
+      }
+      .review {
+        padding: 15px;
+        font-size: 1.1rem;
+      }
     }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h1>Модерація відгуків</h1>
-  <div id="reviewsContainer"></div>
+  <h1>Адмін панель - Модерація відгуків</h1>
+  <div id="reviewsContainer">Завантаження відгуків...</div>
 
   <script>
     const firebaseConfig = {
@@ -87,78 +111,99 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const reviewsContainer = document.getElementById('reviewsContainer');
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    const container = document.getElementById('reviewsContainer');
 
     function stars(count) {
       return '★'.repeat(count) + '☆'.repeat(5 - count);
     }
 
-    function formatDate(ts) {
-      const date = new Date(ts);
-      return date.toLocaleDateString('uk-UA') + ' ' + date.toLocaleTimeString('uk-UA', {hour: '2-digit', minute: '2-digit'});
-    }
-
-    function renderReviews() {
-      db.ref('reviews').orderByChild('timestamp').once('value', snapshot => {
-        reviewsContainer.innerHTML = '';
-        const reviews = [];
-        snapshot.forEach(child => {
-          const data = child.val();
-          reviews.push({ key: child.key, ...data });
-        });
-
-        reviews.reverse().forEach(review => {
-          const div = document.createElement('div');
-          div.className = 'review';
-
-          div.innerHTML = `
-            <strong>${escapeHtml(review.name)}</strong>
-            <span class="stars">${stars(review.rating)}</span>
-            <span class="review-date">${formatDate(review.timestamp)}</span>
-            <p>${escapeHtml(review.message)}</p>
-          `;
-
-          if (review.photoUrl) {
-            const img = document.createElement('img');
-            img.src = review.photoUrl;
-            img.alt = 'Фото відгуку';
-            div.appendChild(img);
-          }
-
-          if (!review.approved) {
-            const approveBtn = document.createElement('button');
-            approveBtn.textContent = '✅ Схвалити';
-            approveBtn.className = 'approve';
-            approveBtn.onclick = () => {
-              db.ref('reviews/' + review.key).update({ approved: true });
-              div.remove();
-            };
-            div.appendChild(approveBtn);
-          }
-
-          const deleteBtn = document.createElement('button');
-          deleteBtn.textContent = '🗑️ Видалити';
-          deleteBtn.className = 'delete';
-          deleteBtn.onclick = () => {
-            if (confirm('Ви дійсно хочете видалити цей відгук?')) {
-              db.ref('reviews/' + review.key).remove();
-              div.remove();
-            }
-          };
-          div.appendChild(deleteBtn);
-
-          reviewsContainer.appendChild(div);
-        });
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/[&<>"']/g, function (m) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[m];
       });
     }
 
-    renderReviews();
+    function renderReviews(reviews) {
+      container.innerHTML = '';
+      if (!reviews || Object.keys(reviews).length === 0) {
+        container.innerHTML = '<p>Немає відгуків для модерації.</p>';
+        return;
+      }
+
+      for (const key in reviews) {
+        const review = reviews[key];
+        const div = document.createElement('div');
+        div.className = 'review';
+
+        const date = review.timestamp ? new Date(review.timestamp) : new Date();
+        const formattedDate = date.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+
+        div.innerHTML = `
+          <strong>${escapeHtml(review.name)}</strong>
+          <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
+          <p>${escapeHtml(review.message)}</p>
+          <p><b>Статус:</b> ${review.approved ? 'Одобрено' : 'Очікує модерації'}</p>
+          <label>Дата та час:</label>
+          <input type="datetime-local" value="${formattedDate}" id="dt-${key}" />
+        `;
+
+        const saveDateBtn = document.createElement('button');
+        saveDateBtn.textContent = 'Зберегти дату';
+        saveDateBtn.className = 'save-date';
+        saveDateBtn.onclick = () => {
+          const newDateValue = document.getElementById(`dt-${key}`).value;
+          if (newDateValue) {
+            const newTimestamp = new Date(newDateValue).getTime();
+            db.ref('reviews/' + key).update({ timestamp: newTimestamp });
+            alert('Дата оновлена!');
+          }
+        };
+        div.appendChild(saveDateBtn);
+
+        if (!review.approved) {
+          const approveBtn = document.createElement('button');
+          approveBtn.textContent = 'Одобрити';
+          approveBtn.className = 'approve';
+          approveBtn.onclick = () => {
+            db.ref('reviews/' + key).update({ approved: true });
+          };
+          div.appendChild(approveBtn);
+
+          const rejectBtn = document.createElement('button');
+          rejectBtn.textContent = 'Відхилити';
+          rejectBtn.className = 'delete';
+          rejectBtn.onclick = () => {
+            if (confirm('Відхилити та видалити цей відгук?')) {
+              db.ref('reviews/' + key).remove();
+            }
+          };
+          div.appendChild(rejectBtn);
+        } else {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.textContent = 'Видалити';
+          deleteBtn.className = 'delete';
+          deleteBtn.onclick = () => {
+            if (confirm('Видалити цей відгук?')) {
+              db.ref('reviews/' + key).remove();
+            }
+          };
+          div.appendChild(deleteBtn);
+        }
+
+        container.appendChild(div);
+      }
+    }
+
+    db.ref('reviews').on('value', snapshot => {
+      renderReviews(snapshot.val());
+    });
   </script>
 </body>
 </html>
