@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Відгуки з Firebase та рейтингом</title>
+  <title>Відгуки з Firebase та фото</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -29,9 +29,6 @@
       border-radius: 6px;
       resize: vertical;
     }
-    form textarea {
-      min-height: 80px;
-    }
     form button {
       width: 100%;
       padding: 14px;
@@ -41,7 +38,6 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
     }
     form button:hover {
       background-color: #1565c0;
@@ -64,7 +60,6 @@
       font-size: 1.3rem;
       margin-left: 8px;
       vertical-align: middle;
-      user-select: none;
     }
     .review-date {
       position: absolute;
@@ -72,38 +67,24 @@
       right: 15px;
       font-size: 0.9rem;
       color: #666;
-      user-select: none;
     }
-
-    @media (max-width: 480px) {
-      body {
-        padding: 10px;
-        font-size: 18px;
-      }
-      form button {
-        padding: 16px;
-        font-size: 1.3rem;
-      }
-      .review {
-        padding: 15px;
-        font-size: 1.1rem;
-      }
-      .review-date {
-        top: 18px;
-        right: 18px;
-      }
+    .review img {
+      max-width: 100%;
+      margin-top: 10px;
+      border-radius: 6px;
     }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
 </head>
 <body>
   <h1>Залиште відгук</h1>
   <form id="reviewForm">
-    <input type="text" id="name" placeholder="Ваше ім'я" required autocomplete="name" />
+    <input type="text" id="name" placeholder="Ваше ім'я" required />
     <textarea id="message" placeholder="Ваш відгук" required></textarea>
     <label for="rating">Рейтинг (зірки):</label>
-    <select id="rating" required aria-label="Рейтинг">
+    <select id="rating" required>
       <option value="" disabled selected>Оберіть рейтинг</option>
       <option value="1">1 ★</option>
       <option value="2">2 ★★</option>
@@ -111,6 +92,8 @@
       <option value="4">4 ★★★★</option>
       <option value="5">5 ★★★★★</option>
     </select>
+    <label for="photo">Фото (необов'язково):</label>
+    <input type="file" id="photo" accept="image/*" />
     <button type="submit">Надіслати</button>
   </form>
 
@@ -130,62 +113,75 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const storage = firebase.storage();
 
-    const reviewForm = document.getElementById('reviewForm');
-    const approvedReviewsDiv = document.getElementById('approvedReviews');
+    const form = document.getElementById('reviewForm');
+    const reviewsContainer = document.getElementById('approvedReviews');
 
-    reviewForm.addEventListener('submit', e => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
+
       const name = document.getElementById('name').value.trim();
       const message = document.getElementById('message').value.trim();
       const rating = parseInt(document.getElementById('rating').value);
+      const photoFile = document.getElementById('photo').files[0];
+
       if (!name || !message || !rating) {
-        alert('Будь ласка, заповніть всі поля.');
+        alert("Будь ласка, заповніть всі поля.");
         return;
       }
 
-      const newReviewRef = db.ref('reviews').push();
-      newReviewRef.set({
+      let photoUrl = '';
+
+      if (photoFile) {
+        const maxSize = 5 * 1024 * 1024;
+        if (photoFile.size > maxSize) {
+          alert('Фото повинно бути менше 5 МБ.');
+          return;
+        }
+
+        const photoRef = storage.ref().child(`review_photos/${Date.now()}_${photoFile.name}`);
+        await photoRef.put(photoFile);
+        photoUrl = await photoRef.getDownloadURL();
+      }
+
+      await db.ref('reviews').push({
         name,
         message,
         rating,
+        photoUrl,
         approved: false,
         timestamp: Date.now()
       });
 
-      alert('Дякуємо за відгук! Він буде опублікований після модерації.');
-      reviewForm.reset();
+      alert("Дякуємо за відгук! Він буде опублікований після модерації.");
+      form.reset();
     });
 
     function stars(count) {
       return '★'.repeat(count) + '☆'.repeat(5 - count);
     }
 
-    function getFormattedDate(timestamp) {
-      const date = new Date(timestamp);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = String(date.getFullYear()).slice(-2);
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${day}.${month}.${year} ${hours}:${minutes}`;
+    function getFormattedDate(ts) {
+      const date = new Date(ts);
+      return date.toLocaleDateString('uk-UA') + ' ' + date.toLocaleTimeString('uk-UA', {hour: '2-digit', minute: '2-digit'});
     }
 
     function showApprovedReviews() {
       db.ref('reviews').orderByChild('approved').equalTo(true).on('value', snapshot => {
-        approvedReviewsDiv.innerHTML = '';
-        snapshot.forEach(childSnapshot => {
-          const review = childSnapshot.val();
+        reviewsContainer.innerHTML = '';
+        snapshot.forEach(child => {
+          const r = child.val();
           const div = document.createElement('div');
           div.className = 'review';
-          const formattedDate = getFormattedDate(review.timestamp);
           div.innerHTML = `
-            <strong>${review.name}</strong>
-            <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
-            <span class="review-date">${formattedDate}</span>
-            <p>${review.message}</p>
+            <strong>${r.name}</strong>
+            <span class="stars">${stars(r.rating)}</span>
+            <span class="review-date">${getFormattedDate(r.timestamp)}</span>
+            <p>${r.message}</p>
+            ${r.photoUrl ? `<img src="${r.photoUrl}" alt="Фото відгуку" />` : ''}
           `;
-          approvedReviewsDiv.appendChild(div);
+          reviewsContainer.appendChild(div);
         });
       });
     }
@@ -194,5 +190,4 @@
   </script>
 </body>
 </html>
-
 
