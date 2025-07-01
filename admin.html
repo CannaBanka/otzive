@@ -65,21 +65,32 @@
       background-color: #1976d2;
       color: white;
     }
-    input[type="datetime-local"],
-    input[type="url"] {
+    input[type="datetime-local"] {
       width: 100%;
       margin: 5px 0;
       padding: 6px;
       border-radius: 6px;
       border: 1px solid #ccc;
       font-size: 1rem;
+    }
+    input[type="text"].photo-url {
+      width: 100%;
+      margin: 5px 0 10px 0;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
       box-sizing: border-box;
     }
-    .review img {
-      max-width: 100%;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      margin-top: 6px;
+
+    /* Нові стилі для статусу */
+    .status-approved {
+      color: #2e7d32; /* темно-зелений */
+      font-weight: bold;
+    }
+    .status-pending {
+      color: #d32f2f; /* яскраво-червоний */
+      font-weight: bold;
     }
 
     @media (max-width: 480px) {
@@ -153,18 +164,23 @@
         const date = review.timestamp ? new Date(review.timestamp) : new Date();
         const formattedDate = date.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
 
+        // Поле для фото (URL)
+        const photoUrl = review.photoUrl ? escapeHtml(review.photoUrl) : '';
+
         div.innerHTML = `
           <strong>${escapeHtml(review.name)}</strong>
           <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
           <p>${escapeHtml(review.message)}</p>
-          ${review.photoUrl ? `<p><b>Фото:</b><br><img src="${review.photoUrl}" alt="Фото від ${escapeHtml(review.name)}" /></p>` : ''}
-          <p><b>Статус:</b> ${review.approved ? 'Одобрено' : 'Очікує модерації'}</p>
+          <p><b>Статус:</b> <span class="${review.approved ? 'status-approved' : 'status-pending'}">
+            ${review.approved ? 'Одобрено' : 'Очікує модерації'}
+          </span></p>
           <label>Дата та час:</label>
           <input type="datetime-local" value="${formattedDate}" id="dt-${key}" />
           <label>Посилання на фото:</label>
-          <input type="url" value="${escapeHtml(review.photoUrl || '')}" id="photoUrl-${key}" />
+          <input type="text" class="photo-url" id="photo-${key}" placeholder="Вставте URL фото" value="${photoUrl}" />
         `;
 
+        // Кнопка збереження дати
         const saveDateBtn = document.createElement('button');
         saveDateBtn.textContent = 'Зберегти дату';
         saveDateBtn.className = 'save-date';
@@ -178,50 +194,55 @@
         };
         div.appendChild(saveDateBtn);
 
+        // Кнопка збереження фото
         const savePhotoBtn = document.createElement('button');
         savePhotoBtn.textContent = 'Зберегти фото';
         savePhotoBtn.className = 'save-date';
         savePhotoBtn.onclick = () => {
-          const newPhotoUrl = document.getElementById(`photoUrl-${key}`).value.trim() || null;
+          const newPhotoUrl = document.getElementById(`photo-${key}`).value.trim();
           db.ref('reviews/' + key).update({ photoUrl: newPhotoUrl });
           alert('Посилання на фото оновлено!');
         };
         div.appendChild(savePhotoBtn);
 
-        const approveBtn = document.createElement('button');
-        approveBtn.textContent = 'Одобрити';
-        approveBtn.className = 'approve';
-        approveBtn.onclick = () => {
-          db.ref('reviews/' + key).update({ approved: true });
-          alert('Відгук одобрено!');
-          loadReviews();
-        };
-        div.appendChild(approveBtn);
+        if (!review.approved) {
+          const approveBtn = document.createElement('button');
+          approveBtn.textContent = 'Одобрити';
+          approveBtn.className = 'approve';
+          approveBtn.onclick = () => {
+            db.ref('reviews/' + key).update({ approved: true });
+            alert('Відгук одобрено!');
+          };
+          div.appendChild(approveBtn);
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Видалити';
-        deleteBtn.className = 'delete';
-        deleteBtn.onclick = () => {
-          if (confirm('Ви впевнені, що хочете видалити цей відгук?')) {
-            db.ref('reviews/' + key).remove();
-            alert('Відгук видалено.');
-            loadReviews();
-          }
-        };
-        div.appendChild(deleteBtn);
+          const rejectBtn = document.createElement('button');
+          rejectBtn.textContent = 'Відхилити';
+          rejectBtn.className = 'delete';
+          rejectBtn.onclick = () => {
+            if (confirm('Відхилити та видалити цей відгук?')) {
+              db.ref('reviews/' + key).remove();
+            }
+          };
+          div.appendChild(rejectBtn);
+        } else {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.textContent = 'Видалити';
+          deleteBtn.className = 'delete';
+          deleteBtn.onclick = () => {
+            if (confirm('Видалити цей відгук?')) {
+              db.ref('reviews/' + key).remove();
+            }
+          };
+          div.appendChild(deleteBtn);
+        }
 
         container.appendChild(div);
       }
     }
 
-    function loadReviews() {
-      db.ref('reviews').once('value').then(snapshot => {
-        renderReviews(snapshot.val());
-      });
-    }
-
-    loadReviews();
+    db.ref('reviews').on('value', snapshot => {
+      renderReviews(snapshot.val());
+    });
   </script>
 </body>
 </html>
-
