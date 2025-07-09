@@ -148,93 +148,100 @@
       });
     }
 
-    function renderReviews(reviews) {
-      container.innerHTML = '';
-      if (!reviews || Object.keys(reviews).length === 0) {
-        container.innerHTML = '<p>Немає відгуків для модерації.</p>';
-        return;
+function renderReviews(reviews) {
+  container.innerHTML = '';
+  if (!reviews || Object.keys(reviews).length === 0) {
+    container.innerHTML = '<p>Немає відгуків для модерації.</p>';
+    return;
+  }
+
+  for (const key in reviews) {
+    const review = reviews[key];
+    const div = document.createElement('div');
+    div.className = 'review';
+
+    const date = review.timestamp ? new Date(review.timestamp) : new Date();
+    const formattedDate = date.toISOString().slice(0, 16);
+
+    const photoUrl = review.photoUrl || '';
+    const reply = review.adminReply || '';
+
+    div.innerHTML = `
+      <strong>${escapeHtml(review.name)}</strong>
+      <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
+      <p>${escapeHtml(review.message)}</p>
+      ${photoUrl ? `<img src="${photoUrl}" alt="Фото відгука" class="review-photo" />` : ''}
+      <p><b>Статус:</b> <span class="${review.approved ? 'status-approved' : 'status-pending'}">
+        ${review.approved ? 'Одобрено' : 'Очікує модерації'}
+      </span></p>
+      <label>Дата та час:</label>
+      <input type="datetime-local" value="${formattedDate}" id="dt-${key}" />
+      <label>Посилання на фото:</label>
+      <input type="text" class="photo-url" id="photo-${key}" placeholder="Вставте URL фото" value="${escapeHtml(photoUrl)}" />
+      <label>Відповідь адміністратора:</label>
+      <textarea id="reply-${key}" rows="3" style="width:100%;resize:vertical;">${escapeHtml(reply)}</textarea>
+    `;
+
+    const saveDateBtn = document.createElement('button');
+    saveDateBtn.textContent = 'Зберегти дату';
+    saveDateBtn.className = 'save-date';
+    saveDateBtn.onclick = () => {
+      const newDateValue = document.getElementById(`dt-${key}`).value;
+      if (newDateValue) {
+        const newTimestamp = new Date(newDateValue).getTime();
+        db.ref('reviews/' + key).update({ timestamp: newTimestamp });
+        alert('Дата оновлена!');
       }
+    };
+    div.appendChild(saveDateBtn);
 
-      for (const key in reviews) {
-        const review = reviews[key];
-        const div = document.createElement('div');
-        div.className = 'review';
+    const savePhotoBtn = document.createElement('button');
+    savePhotoBtn.textContent = 'Зберегти фото';
+    savePhotoBtn.className = 'save-date';
+    savePhotoBtn.onclick = () => {
+      const newPhotoUrl = document.getElementById(`photo-${key}`).value.trim();
+      db.ref('reviews/' + key).update({ photoUrl: newPhotoUrl });
+      alert('Посилання на фото оновлено!');
+    };
+    div.appendChild(savePhotoBtn);
 
-        const date = review.timestamp ? new Date(review.timestamp) : new Date();
-        const formattedDate = date.toISOString().slice(0, 16); // yyyy-MM-ddTHH:mm
+    const replyBtn = document.createElement('button');
+    replyBtn.textContent = 'Зберегти відповідь';
+    replyBtn.className = 'save-date';
+    replyBtn.onclick = () => {
+      const replyText = document.getElementById(`reply-${key}`).value.trim();
+      db.ref('reviews/' + key).update({ adminReply: replyText });
+      alert('Відповідь збережена!');
+    };
+    div.appendChild(replyBtn);
 
-        const photoUrl = review.photoUrl || '';
-
-        div.innerHTML = `
-          <strong>${escapeHtml(review.name)}</strong>
-          <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
-          <p>${escapeHtml(review.message)}</p>
-          ${photoUrl ? `<img src="${photoUrl}" alt="Фото відгука" class="review-photo" />` : ''}
-          <p><b>Статус:</b> <span class="${review.approved ? 'status-approved' : 'status-pending'}">
-            ${review.approved ? 'Одобрено' : 'Очікує модерації'}
-          </span></p>
-          <label>Дата та час:</label>
-          <input type="datetime-local" value="${formattedDate}" id="dt-${key}" />
-          <label>Посилання на фото:</label>
-          <input type="text" class="photo-url" id="photo-${key}" placeholder="Вставте URL фото" value="${escapeHtml(photoUrl)}" />
-        `;
-
-        const saveDateBtn = document.createElement('button');
-        saveDateBtn.textContent = 'Зберегти дату';
-        saveDateBtn.className = 'save-date';
-        saveDateBtn.onclick = () => {
-          const newDateValue = document.getElementById(`dt-${key}`).value;
-          if (newDateValue) {
-            const newTimestamp = new Date(newDateValue).getTime();
-            db.ref('reviews/' + key).update({ timestamp: newTimestamp });
-            alert('Дата оновлена!');
-          }
-        };
-        div.appendChild(saveDateBtn);
-
-        const savePhotoBtn = document.createElement('button');
-        savePhotoBtn.textContent = 'Зберегти фото';
-        savePhotoBtn.className = 'save-date';
-        savePhotoBtn.onclick = () => {
-          const newPhotoUrl = document.getElementById(`photo-${key}`).value.trim();
-          db.ref('reviews/' + key).update({ photoUrl: newPhotoUrl });
-          alert('Посилання на фото оновлено!');
-        };
-        div.appendChild(savePhotoBtn);
-
-        if (!review.approved) {
-          const approveBtn = document.createElement('button');
-          approveBtn.textContent = 'Одобрити';
-          approveBtn.className = 'approve';
-          approveBtn.onclick = () => {
-            db.ref('reviews/' + key).update({ approved: true });
-          };
-          div.appendChild(approveBtn);
-
-          const rejectBtn = document.createElement('button');
-          rejectBtn.textContent = 'Відхилити';
-          rejectBtn.className = 'delete';
-          rejectBtn.onclick = () => {
-            if (confirm('Відхилити та видалити цей відгук?')) {
-              db.ref('reviews/' + key).remove();
-            }
-          };
-          div.appendChild(rejectBtn);
-        } else {
-          const deleteBtn = document.createElement('button');
-          deleteBtn.textContent = 'Видалити';
-          deleteBtn.className = 'delete';
-          deleteBtn.onclick = () => {
-            if (confirm('Видалити цей відгук?')) {
-              db.ref('reviews/' + key).remove();
-            }
-          };
-          div.appendChild(deleteBtn);
+    if (review.adminReply) {
+      const deleteReplyBtn = document.createElement('button');
+      deleteReplyBtn.textContent = 'Видалити відповідь';
+      deleteReplyBtn.className = 'delete';
+      deleteReplyBtn.onclick = () => {
+        if (confirm('Ви впевнені, що хочете видалити відповідь адміністратора?')) {
+          db.ref('reviews/' + key).update({ adminReply: null });
+          alert('Відповідь видалена.');
         }
-
-        container.appendChild(div);
-      }
+      };
+      div.appendChild(deleteReplyBtn);
     }
+
+    if (!review.approved) {
+      const approveBtn = document.createElement('button');
+      approveBtn.textContent = 'Одобрити';
+      approveBtn.className = 'approve';
+      approveBtn.onclick = () => {
+        db.ref('reviews/' + key).update({ approved: true });
+      };
+      div.appendChild(approveBtn);
+    }
+
+    container.appendChild(div);
+  }
+}
+
 
     db.ref('reviews').on('value', snapshot => {
       renderReviews(snapshot.val());
