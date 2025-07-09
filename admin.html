@@ -114,7 +114,6 @@
 <body>
   <h1>Адмін панель - Модерація відгуків</h1>
   <div id="reviewsContainer">Завантаження відгуків...</div>
-
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDUs_53Iek1mKi2GcJCduz2N-d_3kWHW3o",
@@ -125,16 +124,12 @@
       messagingSenderId: "989700479323",
       appId: "1:989700479323:web:80387b013848a140c2a27e"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     const container = document.getElementById('reviewsContainer');
-
     function stars(count) {
       return '★'.repeat(count) + '☆'.repeat(5 - count);
     }
-
     function escapeHtml(text) {
       if (!text) return '';
       return text.replace(/[&<>"']/g, function (m) {
@@ -147,25 +142,20 @@
         }[m];
       });
     }
-
     function renderReviews(reviews) {
       container.innerHTML = '';
       if (!reviews || Object.keys(reviews).length === 0) {
         container.innerHTML = '<p>Немає відгуків для модерації.</p>';
         return;
       }
-
       for (const key in reviews) {
         const review = reviews[key];
         const div = document.createElement('div');
         div.className = 'review';
-
         const date = review.timestamp ? new Date(review.timestamp) : new Date();
         const formattedDate = date.toISOString().slice(0, 16);
-
         const photoUrl = review.photoUrl || '';
         const reply = review.adminReply || '';
-
         div.innerHTML = `
           <strong>${escapeHtml(review.name)}</strong>
           <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
@@ -181,7 +171,6 @@
           <label>Відповідь адміністратора:</label>
           <textarea id="reply-${key}" rows="3" style="width:100%;resize:vertical;">${escapeHtml(reply)}</textarea>
         `;
-
         const saveDateBtn = document.createElement('button');
         saveDateBtn.textContent = 'Зберегти дату';
         saveDateBtn.className = 'save-date';
@@ -194,7 +183,6 @@
           }
         };
         div.appendChild(saveDateBtn);
-
         const savePhotoBtn = document.createElement('button');
         savePhotoBtn.textContent = 'Зберегти фото';
         savePhotoBtn.className = 'save-date';
@@ -204,7 +192,6 @@
           alert('Посилання на фото оновлено!');
         };
         div.appendChild(savePhotoBtn);
-
         const replyBtn = document.createElement('button');
         replyBtn.textContent = 'Зберегти відповідь';
         replyBtn.className = 'save-date';
@@ -214,7 +201,6 @@
           alert('Відповідь збережена!');
         };
         div.appendChild(replyBtn);
-
         if (review.adminReply) {
           const deleteReplyBtn = document.createElement('button');
           deleteReplyBtn.textContent = 'Видалити відповідь';
@@ -227,7 +213,6 @@
           };
           div.appendChild(deleteReplyBtn);
         }
-
         if (!review.approved) {
           const approveBtn = document.createElement('button');
           approveBtn.textContent = 'Одобрити';
@@ -236,27 +221,23 @@
             db.ref('reviews/' + key).update({ approved: true });
           };
           div.appendChild(approveBtn);
-
-          const rejectBtn = document.createElement('button');
-          rejectBtn.textContent = 'Відхилити';
-          rejectBtn.className = 'delete';
-          rejectBtn.onclick = () => {
-            if (confirm('Ви впевнені, що хочете відхилити (видалити) цей відгук?')) {
-              db.ref('reviews/' + key).remove();
-              alert('Відгук відхилено та видалено.');
-            }
-          };
-          div.appendChild(rejectBtn);
         }
-
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Видалити';
+        deleteBtn.className = 'delete';
+        deleteBtn.onclick = () => {
+          if (confirm('Ви впевнені, що хочете видалити цей відгук?')) {
+            db.ref('reviews/' + key).remove();
+            alert('Відгук видалено.');
+          }
+        };
+        div.appendChild(deleteBtn);
         container.appendChild(div);
       }
     }
-
     db.ref('reviews').on('value', snapshot => {
       renderReviews(snapshot.val());
     });
   </script>
 </body>
 </html>
-
