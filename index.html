@@ -92,16 +92,30 @@
       font-size: 1.1rem;
       margin: 20px 0 10px;
     }
-    #themeToggle {
-      margin: 20px auto;
+    #themeToggle,
+    #goHome {
+      margin: 10px auto;
       display: block;
       padding: 10px 16px;
-      background-color: #444;
-      color: white;
+      font-size: 1rem;
       border: none;
       border-radius: 6px;
-      font-size: 1rem;
       cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #themeToggle {
+      background-color: #444;
+      color: white;
+    }
+    #themeToggle:hover {
+      background-color: #333;
+    }
+    #goHome {
+      background-color: #888;
+      color: white;
+    }
+    #goHome:hover {
+      background-color: #666;
     }
     .rating-bar {
       height: 12px;
@@ -117,7 +131,6 @@
       width: 0;
       transition: width 0.4s ease;
     }
-    /* Темна тема */
     body.dark-theme {
       background-color: #121212;
       color: #eee;
@@ -144,6 +157,12 @@
     }
     .dark-theme .rating-fill {
       background-color: #fbc02d;
+    }
+    .dark-theme #goHome {
+      background-color: #555;
+    }
+    .dark-theme #goHome:hover {
+      background-color: #444;
     }
     .admin-reply {
       margin-top: 10px;
@@ -181,6 +200,8 @@
 <body>
   <h1>Залиште відгук</h1>
   <button id="themeToggle">🌗 Змінити тему</button>
+  <button id="goHome" onclick="location.href='index.html'">🏠 На головну</button>
+
   <form id="reviewForm">
     <input type="text" id="name" placeholder="Ваше ім'я" required autocomplete="name" />
     <textarea id="message" placeholder="Ваш відгук" required></textarea>
@@ -207,6 +228,7 @@
   </select>
   <h2>Відгуки</h2>
   <div id="approvedReviews"></div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDUs_53Iek1mKi2GcJCduz2N-d_3kWHW3o",
@@ -224,6 +246,7 @@
     const ratingStatsDiv = document.getElementById('ratingStats');
     const ratingFill = document.getElementById('ratingFill');
     const filterRating = document.getElementById('filterRating');
+
     reviewForm.addEventListener('submit', e => {
       e.preventDefault();
       const name = document.getElementById('name').value.trim();
@@ -246,9 +269,11 @@
       alert('Дякуємо за відгук! Він буде опублікований після модерації.');
       reviewForm.reset();
     });
+
     function stars(count) {
       return '★'.repeat(count) + '☆'.repeat(5 - count);
     }
+
     function getFormattedDate(timestamp) {
       const date = new Date(timestamp);
       const day = String(date.getDate()).padStart(2, '0');
@@ -258,48 +283,49 @@
       const minutes = String(date.getMinutes()).padStart(2, '0');
       return `${day}.${month}.${year} ${hours}:${minutes}`;
     }
-   function showApprovedReviews() {
-  const filterValue = filterRating?.value || 'all';
-  db.ref('reviews').orderByChild('approved').equalTo(true).on('value', snapshot => {
-    approvedReviewsDiv.innerHTML = '';
-    ratingStatsDiv.innerHTML = '';
-    ratingFill.style.width = '0%';
-    let totalRating = 0;
-    let count = 0;
-    snapshot.forEach(childSnapshot => {
-      const review = childSnapshot.val();
-      const passesFilter =
-        filterValue === 'all' ||
-        (filterValue === '5' && review.rating === 5) ||
-        (filterValue === '4' && review.rating >= 4) ||
-        (filterValue === '3' && review.rating >= 3);
-      if (!passesFilter) return;
-      totalRating += review.rating;
-      count++;
-      const div = document.createElement('div');
-      div.className = 'review';
-      const formattedDate = getFormattedDate(review.timestamp);
-      div.innerHTML = `
-        <strong>${review.name}</strong>
-        <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
-        <span class="review-date">${formattedDate}</span>
-        <p>${review.message}</p>
-        ${review.photoUrl ? `<img src="${review.photoUrl}" alt="Фото від ${review.name}" />` : ''}
-        ${review.adminReply ? `<div class="admin-reply"><strong>Адміністратор:</strong><br>${review.adminReply}</div>` : ''}
-      `;
-      approvedReviewsDiv.appendChild(div);
-    });
-    if (count > 0) {
-      const average = (totalRating / count).toFixed(1);
-      ratingStatsDiv.innerHTML = `📊 Відгуків: <strong>${count}</strong> | Середній рейтинг: <strong>${average} ★</strong>`;
-      const percent = (average / 5) * 100;
-      ratingFill.style.width = `${percent}%`;
-    } else {
-      ratingStatsDiv.innerHTML = 'Немає відгуків для цього фільтру.';
+
+    function showApprovedReviews() {
+      const filterValue = filterRating?.value || 'all';
+      db.ref('reviews').orderByChild('approved').equalTo(true).on('value', snapshot => {
+        approvedReviewsDiv.innerHTML = '';
+        ratingStatsDiv.innerHTML = '';
+        ratingFill.style.width = '0%';
+        let totalRating = 0;
+        let count = 0;
+        snapshot.forEach(childSnapshot => {
+          const review = childSnapshot.val();
+          const passesFilter =
+            filterValue === 'all' ||
+            (filterValue === '5' && review.rating === 5) ||
+            (filterValue === '4' && review.rating >= 4) ||
+            (filterValue === '3' && review.rating >= 3);
+          if (!passesFilter) return;
+          totalRating += review.rating;
+          count++;
+          const div = document.createElement('div');
+          div.className = 'review';
+          const formattedDate = getFormattedDate(review.timestamp);
+          div.innerHTML = `
+            <strong>${review.name}</strong>
+            <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
+            <span class="review-date">${formattedDate}</span>
+            <p>${review.message}</p>
+            ${review.photoUrl ? `<img src="${review.photoUrl}" alt="Фото від ${review.name}" />` : ''}
+            ${review.adminReply ? `<div class="admin-reply"><strong>Адміністратор:</strong><br>${review.adminReply}</div>` : ''}
+          `;
+          approvedReviewsDiv.appendChild(div);
+        });
+        if (count > 0) {
+          const average = (totalRating / count).toFixed(1);
+          ratingStatsDiv.innerHTML = `📊 Відгуків: <strong>${count}</strong> | Середній рейтинг: <strong>${average} ★</strong>`;
+          const percent = (average / 5) * 100;
+          ratingFill.style.width = `${percent}%`;
+        } else {
+          ratingStatsDiv.innerHTML = 'Немає відгуків для цього фільтру.';
+        }
+      });
     }
-  });
-}
-    // Темна тема toggle + збереження
+
     const themeToggle = document.getElementById('themeToggle');
     if (localStorage.getItem('theme') === 'dark') {
       document.body.classList.add('dark-theme');
@@ -308,6 +334,7 @@
       document.body.classList.toggle('dark-theme');
       localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
     });
+
     filterRating.addEventListener('change', showApprovedReviews);
     showApprovedReviews();
   </script>
