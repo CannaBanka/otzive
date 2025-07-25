@@ -127,9 +127,11 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const container = document.getElementById('reviewsContainer');
+
     function stars(count) {
       return '★'.repeat(count) + '☆'.repeat(5 - count);
     }
+
     function escapeHtml(text) {
       if (!text) return '';
       return text.replace(/[&<>"']/g, function (m) {
@@ -142,20 +144,27 @@
         }[m];
       });
     }
+
     function renderReviews(reviews) {
       container.innerHTML = '';
       if (!reviews || Object.keys(reviews).length === 0) {
         container.innerHTML = '<p>Немає відгуків для модерації.</p>';
         return;
       }
-      for (const key in reviews) {
-        const review = reviews[key];
+
+      // Сортируем: неапрувнуті (false/undefined) — першими
+      const entries = Object.entries(reviews).sort(([, a], [, b]) => {
+        return (a.approved === b.approved) ? 0 : a.approved ? 1 : -1;
+      });
+
+      for (const [key, review] of entries) {
         const div = document.createElement('div');
         div.className = 'review';
         const date = review.timestamp ? new Date(review.timestamp) : new Date();
         const formattedDate = date.toISOString().slice(0, 16);
         const photoUrl = review.photoUrl || '';
         const reply = review.adminReply || '';
+
         div.innerHTML = `
           <strong>${escapeHtml(review.name)}</strong>
           <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
@@ -171,6 +180,7 @@
           <label>Відповідь адміністратора:</label>
           <textarea id="reply-${key}" rows="3" style="width:100%;resize:vertical;">${escapeHtml(reply)}</textarea>
         `;
+
         const saveDateBtn = document.createElement('button');
         saveDateBtn.textContent = 'Зберегти дату';
         saveDateBtn.className = 'save-date';
@@ -183,6 +193,7 @@
           }
         };
         div.appendChild(saveDateBtn);
+
         const savePhotoBtn = document.createElement('button');
         savePhotoBtn.textContent = 'Зберегти фото';
         savePhotoBtn.className = 'save-date';
@@ -192,6 +203,7 @@
           alert('Посилання на фото оновлено!');
         };
         div.appendChild(savePhotoBtn);
+
         const replyBtn = document.createElement('button');
         replyBtn.textContent = 'Зберегти відповідь';
         replyBtn.className = 'save-date';
@@ -201,6 +213,7 @@
           alert('Відповідь збережена!');
         };
         div.appendChild(replyBtn);
+
         if (review.adminReply) {
           const deleteReplyBtn = document.createElement('button');
           deleteReplyBtn.textContent = 'Видалити відповідь';
@@ -213,6 +226,7 @@
           };
           div.appendChild(deleteReplyBtn);
         }
+
         if (!review.approved) {
           const approveBtn = document.createElement('button');
           approveBtn.textContent = 'Одобрити';
@@ -222,6 +236,7 @@
           };
           div.appendChild(approveBtn);
         }
+
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'Видалити';
         deleteBtn.className = 'delete';
@@ -232,9 +247,11 @@
           }
         };
         div.appendChild(deleteBtn);
+
         container.appendChild(div);
       }
     }
+
     db.ref('reviews').on('value', snapshot => {
       renderReviews(snapshot.val());
     });
