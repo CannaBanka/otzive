@@ -152,9 +152,15 @@
         return;
       }
 
-      // Сортируем: неапрувнуті (false/undefined) — першими
       const entries = Object.entries(reviews).sort(([, a], [, b]) => {
-        return (a.approved === b.approved) ? 0 : a.approved ? 1 : -1;
+        const aApproved = a.approved ? 1 : 0;
+        const bApproved = b.approved ? 1 : 0;
+        if (aApproved !== bApproved) {
+          return aApproved - bApproved; // неапрувнуті вгорі
+        }
+        const aTime = a.timestamp || 0;
+        const bTime = b.timestamp || 0;
+        return bTime - aTime; // новіші вище
       });
 
       for (const [key, review] of entries) {
@@ -258,3 +264,4 @@
   </script>
 </body>
 </html>
+
