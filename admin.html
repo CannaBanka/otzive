@@ -15,7 +15,16 @@
     }
     h1 {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
+    }
+    #searchBox {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
     }
     .review {
       border: 1px solid #ddd;
@@ -113,6 +122,7 @@
 </head>
 <body>
   <h1>Адмін панель - Модерація відгуків</h1>
+  <input type="text" id="searchBox" placeholder="Пошук за ім’ям або текстом..." />
   <div id="reviewsContainer">Завантаження відгуків...</div>
   <script>
     const firebaseConfig = {
@@ -127,6 +137,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const container = document.getElementById('reviewsContainer');
+    const searchBox = document.getElementById('searchBox');
+    let allReviews = {};
 
     function stars(count) {
       return '★'.repeat(count) + '☆'.repeat(5 - count);
@@ -152,16 +164,21 @@
         return;
       }
 
-      const entries = Object.entries(reviews).sort(([, a], [, b]) => {
-        const aApproved = a.approved ? 1 : 0;
-        const bApproved = b.approved ? 1 : 0;
-        if (aApproved !== bApproved) {
-          return aApproved - bApproved; // неапрувнуті вгорі
-        }
-        const aTime = a.timestamp || 0;
-        const bTime = b.timestamp || 0;
-        return bTime - aTime; // новіші вище
-      });
+      const query = searchBox.value.toLowerCase().trim();
+      const entries = Object.entries(reviews)
+        .filter(([, review]) => {
+          const name = review.name?.toLowerCase() || '';
+          const message = review.message?.toLowerCase() || '';
+          return name.includes(query) || message.includes(query);
+        })
+        .sort(([, a], [, b]) => {
+          const aApproved = a.approved ? 1 : 0;
+          const bApproved = b.approved ? 1 : 0;
+          if (aApproved !== bApproved) return aApproved - bApproved;
+          const aTime = a.timestamp || 0;
+          const bTime = b.timestamp || 0;
+          return bTime - aTime;
+        });
 
       for (const [key, review] of entries) {
         const div = document.createElement('div');
@@ -258,10 +275,14 @@
       }
     }
 
+    // Реальне оновлення при зміні в полі пошуку
+    searchBox.addEventListener('input', () => renderReviews(allReviews));
+
+    // Отримання відгуків
     db.ref('reviews').on('value', snapshot => {
-      renderReviews(snapshot.val());
+      allReviews = snapshot.val() || {};
+      renderReviews(allReviews);
     });
   </script>
 </body>
 </html>
-
