@@ -213,7 +213,7 @@
     <input type="text" id="name" placeholder="Ваше ім'я" required autocomplete="name" />
     <textarea id="message" placeholder="Ваш відгук" required></textarea>
     <label for="rating">Рейтинг (зірки):</label>
-    <select id="rating" required aria-label="Рейтинг">
+    <select id="rating" required>
       <option value="" disabled selected>Оберіть рейтинг</option>
       <option value="1">1 ★</option>
       <option value="2">2 ★★</option>
@@ -253,6 +253,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
     const reviewForm = document.getElementById('reviewForm');
     const approvedReviewsDiv = document.getElementById('approvedReviews');
     const ratingStatsDiv = document.getElementById('ratingStats');
@@ -304,17 +305,27 @@
         ratingFill.style.width = '0%';
         let totalRating = 0;
         let count = 0;
+        const reviewsArray = [];
+
         snapshot.forEach(childSnapshot => {
           const review = childSnapshot.val();
           const passesFilter =
             filterValue === 'all' ||
             review.rating === parseInt(filterValue);
-          if (!passesFilter) return;
+          if (passesFilter) {
+            reviewsArray.push(review);
+          }
+        });
+
+        // Сортування по даті: нові спочатку
+        reviewsArray.sort((a, b) => b.timestamp - a.timestamp);
+
+        reviewsArray.forEach(review => {
           totalRating += review.rating;
           count++;
           const div = document.createElement('div');
-          div.className = 'review';
           const formattedDate = getFormattedDate(review.timestamp);
+          div.className = 'review';
           div.innerHTML = `
             <strong>${review.name}</strong>
             <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
@@ -325,6 +336,7 @@
           `;
           approvedReviewsDiv.appendChild(div);
         });
+
         if (count > 0) {
           const average = (totalRating / count).toFixed(1);
           ratingStatsDiv.innerHTML = `📊 Відгуків: <strong>${count}</strong> | Середній рейтинг: <strong>${average} ★</strong>`;
