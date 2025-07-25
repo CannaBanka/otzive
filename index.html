@@ -107,8 +107,6 @@
     #themeToggle:hover {
       background-color: #333;
     }
-
-    /* СТИЛЬ ДЛЯ ПОСИЛАННЯ-КНОПКИ */
     #goHome {
       margin: 10px auto;
       display: block;
@@ -131,7 +129,6 @@
     .dark-theme #goHome:hover {
       background-color: #444;
     }
-
     .rating-bar {
       height: 12px;
       background-color: #ccc;
@@ -146,7 +143,6 @@
       width: 0;
       transition: width 0.4s ease;
     }
-
     body.dark-theme {
       background-color: #121212;
       color: #eee;
@@ -231,12 +227,15 @@
 
   <div class="stats" id="ratingStats"></div>
   <div class="rating-bar"><div class="rating-fill" id="ratingFill"></div></div>
+
   <label for="filterRating">Фільтрувати за рейтингом:</label>
   <select id="filterRating">
     <option value="all">Усі рейтинги</option>
     <option value="5">Тільки 5 ★</option>
-    <option value="4">4+ ★</option>
-    <option value="3">3+ ★</option>
+    <option value="4">Тільки 4 ★</option>
+    <option value="3">Тільки 3 ★</option>
+    <option value="2">Тільки 2 ★</option>
+    <option value="1">Тільки 1 ★</option>
   </select>
 
   <h2>Відгуки</h2>
@@ -309,9 +308,7 @@
           const review = childSnapshot.val();
           const passesFilter =
             filterValue === 'all' ||
-            (filterValue === '5' && review.rating === 5) ||
-            (filterValue === '4' && review.rating >= 4) ||
-            (filterValue === '3' && review.rating >= 3);
+            review.rating === parseInt(filterValue);
           if (!passesFilter) return;
           totalRating += review.rating;
           count++;
