@@ -4,21 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Відгуки</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 0 15px;
+      font-family: 'Poppins', Arial, sans-serif;
+      max-width: 760px;
+      margin: 24px auto;
+      padding: 0 18px 60px 18px;
       font-size: 16px;
-      line-height: 1.4;
-      background-color: white;
-      color: black;
-      transition: background-color 0.3s, color 0.3s;
+      line-height: 1.5;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(118,33,255,0.12), transparent 8%), radial-gradient(800px 400px at 90% 90%, rgba(255,75,200,0.08), transparent 10%), #0b0710;
+      color: #e9e6ef;
+      transition: background 0.4s, color 0.3s;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     h1, h2 {
       text-align: center;
-      margin-bottom: 15px;
+      margin-bottom: 18px;
+      color: #fff;
+      text-shadow: 0 4px 18px rgba(128,0,255,0.12);
     }
     form input,
     form textarea,
@@ -28,9 +33,12 @@
       margin: 10px 0 15px 0;
       box-sizing: border-box;
       font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      border-radius: 8px;
       resize: vertical;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #eee;
+      backdrop-filter: blur(4px);
     }
     form textarea {
       min-height: 80px;
@@ -38,49 +46,152 @@
     form button {
       width: 100%;
       padding: 14px;
-      font-size: 1.1rem;
-      background-color: #1976d2;
+      font-size: 1.05rem;
+      background: linear-gradient(90deg,#8b5cff,#d46bff);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 10px 30px rgba(139,92,255,0.18);
     }
     form button:hover {
-      background-color: #1565c0;
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px rgba(139,92,255,0.26);
+    }
+    .field-label {
+      display: block;
+      font-weight: 700;
+      margin: 6px 0 6px 2px;
+      color: #efe6ff;
+    }
+    .hint-text {
+      font-size: 0.95rem;
+      color: #4a5568;
+      background: rgba(25,118,210,0.04);
+      border-left: 3px solid rgba(25,118,210,0.12);
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin: 8px 0 14px 0;
+    }
+    .dark-theme .hint-text {
+      color: #cbd5e1;
+      background: rgba(255,255,255,0.02);
+      border-left-color: rgba(255,255,255,0.06);
+    }
+    .form-message {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      transition: transform 0.18s ease, opacity 0.18s ease;
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    .form-message.visible {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .form-message.error {
+      background: linear-gradient(90deg,#fdecea,#f8d7da);
+      border: 1px solid #f5c2c7;
+      color: #611a15;
+    }
+    .form-message.success {
+      background: linear-gradient(90deg,#e9f7ef,#d6f5e1);
+      border: 1px solid #b7e4c7;
+      color: #1b5e20;
+    }
+    .dark-theme .form-message.error {
+      background: linear-gradient(90deg,#3a1f1f,#2b1919);
+      border-color: #5a2a2a;
+      color: #ffd6d6;
+    }
+    .dark-theme .form-message.success {
+      background: linear-gradient(90deg,#153a1f,#102d16);
+      border-color: #234d2b;
+      color: #b8f0c6;
     }
     .review {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 12px 15px;
-      margin: 12px 0;
-      background-color: #fafafa;
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin: 14px 0;
       position: relative;
+      color: #fff;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.04);
+      box-shadow: 0 8px 30px rgba(86,0,160,0.12), 0 0 18px rgba(128,0,255,0.08) inset;
+      overflow: hidden;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .review:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 40px rgba(86,0,160,0.18), 0 0 30px rgba(128,0,255,0.12) inset;
+    }
+    .review .meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .review .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg,#7b2cff,#b77bff);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      box-shadow: 0 6px 18px rgba(123,44,255,0.28);
+      flex: 0 0 44px;
+      font-size: 0.95rem;
+      user-select: none;
+    }
+    .review .meta .meta-text {
+      flex: 1 1 auto;
     }
     .review strong {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
+      color: #fff;
+    }
+    .review .review-date {
+      position: static;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.68);
+      margin-left: 8px;
+    }
+    .review .message {
+      margin-top: 6px;
+      color: rgba(255,255,255,0.92);
+      line-height: 1.5;
+      font-size: 0.98rem;
+    }
+    .review img {
+      max-width: 100%;
+      margin-top: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
     }
     .stars {
-      color: gold;
-      font-size: 1.3rem;
-      margin-left: 8px;
+      color: #ffd15c;
+      font-size: 1.25rem;
+      margin-left: 6px;
       vertical-align: middle;
       user-select: none;
       display: inline-block;
-      transition: transform 0.2s ease;
+      text-shadow: 0 2px 8px rgba(255,193,7,0.18);
+      transition: transform 0.18s ease;
     }
     .stars:hover {
-      transform: scale(1.15);
-    }
-    .review-date {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      font-size: 0.9rem;
-      color: #666;
-      user-select: none;
+      transform: scale(1.12);
     }
     .review img {
       max-width: 100%;
@@ -135,11 +246,11 @@
       border-radius: 6px;
       overflow: hidden;
       margin: 10px auto 20px;
-      max-width: 300px;
+      max-width: 420px;
     }
     .rating-fill {
       height: 100%;
-      background-color: gold;
+      background: linear-gradient(90deg,#ffdd57,#ff9bff,#8b5cff);
       width: 0;
       transition: width 0.4s ease;
     }
@@ -148,8 +259,11 @@
       color: #eee;
     }
     .dark-theme .review {
-      background-color: #1e1e1e;
-      border-color: #333;
+      background: linear-gradient(180deg, rgba(24,4,34,0.7), rgba(8,2,18,0.7));
+      border-color: rgba(255,255,255,0.04);
+    }
+    .dark-theme .rating-fill {
+      background: linear-gradient(90deg,#ff9bff,#8b5cff);
     }
     .dark-theme form input,
     .dark-theme form textarea,
@@ -171,45 +285,69 @@
       background-color: #fbc02d;
     }
     .admin-reply {
-      margin-top: 10px;
-      padding: 8px;
-      border-left: 3px solid #1976d2;
-      background: #eef3fb;
-      color: black;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-left: 3px solid rgba(139,92,255,0.9);
+      background: linear-gradient(180deg, rgba(139,92,255,0.06), rgba(139,92,255,0.02));
+      color: #fff;
+      border-radius: 8px;
     }
-    .dark-theme .admin-reply {
-      background: #2e2e2e;
-      color: #ffffff;
+    @media (max-width: 768px) {
+      body { max-width: 96%; margin: 18px auto; padding: 12px; }
+      h1, h2 { font-size: 1.25rem; }
+      form input, form textarea, form select { font-size: 0.98rem; padding: 10px 12px; }
+      form button { padding: 12px; font-size: 1rem; border-radius: 10px; }
+      .rating-bar { max-width: 90%; }
+      .review { padding: 12px 14px; }
+      .review .avatar { width: 40px; height: 40px; flex: 0 0 40px; }
     }
-    @media (max-width: 480px) {
-      body {
-        padding: 10px;
-        font-size: 18px;
-      }
-      form button {
-        padding: 16px;
-        font-size: 1.3rem;
-      }
-      .review {
-        padding: 15px;
-        font-size: 1.1rem;
-      }
-      .review-date {
-        top: 18px;
-        right: 18px;
-      }
+    @media (max-width: 420px) {
+      body { padding: 8px 12px 40px 12px; font-size: 15px; }
+      h1 { font-size: 1.1rem; }
+      form input, form textarea, form select { padding: 10px; font-size: 0.95rem; }
+      form button { padding: 12px; font-size: 1rem; }
+      .hint-text { font-size: 0.9rem; }
+      .review { padding: 12px; border-radius: 12px; }
+      .review .avatar { width: 36px; height: 36px; font-size: 0.85rem; }
+      .stars { font-size: 1.05rem; }
+      .stats { font-size: 1rem; }
+      .rating-bar { width: 90%; max-width: 90%; height: 10px; }
+      #goHome, #themeToggle { width: auto; padding: 8px 12px; font-size: 0.95rem; }
     }
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .review {
+      animation: fadeInUp 540ms cubic-bezier(.22,.9,.35,1) both;
+      animation-delay: calc(var(--i, 0) * 80ms);
+    }
+    @keyframes pulseAvatar {
+      0% { box-shadow: 0 6px 18px rgba(123,44,255,0.28); transform: translateY(0); }
+      50% { box-shadow: 0 20px 40px rgba(139,92,255,0.16); transform: translateY(-2px); }
+      100% { box-shadow: 0 6px 18px rgba(123,44,255,0.28); transform: translateY(0); }
+    }
+    .avatar { animation: pulseAvatar 3.6s ease-in-out infinite; }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 </head>
-<body>
+<body class="dark-theme">
   <h1>Залиште відгук</h1>
 
   <button id="themeToggle">🌗 Змінити тему</button>
   <a id="goHome" href="https://cannabanka.github.io/KanabisUkr420/">🏠 На головну</a>
 
   <form id="reviewForm">
+    <div id="formMessage" class="form-message" role="alert" aria-live="polite"></div>
+    <div class="order-group">
+      <label for="orderNumber" class="field-label">Номер замовлення</label>
+      <input type="text" id="orderNumber" placeholder="Введіть номер замовлення" required autocomplete="off" />
+      <label for="orderPin" class="field-label">PIN-код</label>
+      <input type="password" id="orderPin" placeholder="Введіть PIN-код" required autocomplete="off" />
+      <div class="hint-text">Номер замовлення та PIN-код ви отримуєте після оформлення замовлення.</div>
+    </div>
     <input type="text" id="name" placeholder="Ваше ім'я" required autocomplete="name" />
     <textarea id="message" placeholder="Ваш відгук" required></textarea>
     <label for="rating">Рейтинг (зірки):</label>
@@ -262,12 +400,38 @@
 
     reviewForm.addEventListener('submit', e => {
       e.preventDefault();
+      // Перевірка номера замовлення та PIN (тільки один адмінський набір)
+      const orderNumber = document.getElementById('orderNumber').value.trim();
+      const orderPin = document.getElementById('orderPin').value.trim();
+      // Задайте тут бажані адмін-креденшели
+      const ADMIN_ORDER = '2008';
+      const ADMIN_PIN = '4422';
+      // Функція показу повідомлення у формі
+      function showFormMessage(text, type = 'error') {
+        const box = document.getElementById('formMessage');
+        box.textContent = text;
+        box.className = 'form-message ' + type + ' visible';
+        // фокус на полі, якщо це помилка
+        if (type === 'error') {
+          document.getElementById('orderNumber').focus();
+        }
+        // Прибираємо повідомлення через 5 секунд
+        clearTimeout(window._formMessageTimeout);
+        window._formMessageTimeout = setTimeout(() => {
+          box.classList.remove('visible');
+        }, 5000);
+      }
+
+      if (orderNumber !== ADMIN_ORDER || orderPin !== ADMIN_PIN) {
+        showFormMessage('❌ Невірний номер замовлення або PIN. Введіть коректні дані для додавання відгуку.', 'error');
+        return;
+      }
       const name = document.getElementById('name').value.trim();
       const message = document.getElementById('message').value.trim();
       const rating = parseInt(document.getElementById('rating').value);
       const photoUrl = document.getElementById('photoUrl').value.trim();
       if (!name || !message || !rating) {
-        alert('Будь ласка, заповніть всі поля, окрім фото.');
+        showFormMessage('⚠️ Будь ласка, заповніть всі поля, окрім фото.', 'error');
         return;
       }
       const newReviewRef = db.ref('reviews').push();
@@ -276,10 +440,12 @@
         message,
         rating,
         photoUrl: photoUrl || null,
-        approved: false,
+        // Оскільки лише адміністратор може додавати відгуки через цей інтерфейс,
+        // ставимо відразу approved: true
+        approved: true,
         timestamp: Date.now()
       });
-      alert('Дякуємо за відгук! Він буде опублікований після модерації.');
+      showFormMessage('✅ Дякуємо! Відгук додано та опубліковано.', 'success');
       reviewForm.reset();
     });
 
@@ -320,17 +486,25 @@
         // Сортування по даті: нові спочатку
         reviewsArray.sort((a, b) => b.timestamp - a.timestamp);
 
-        reviewsArray.forEach(review => {
+        reviewsArray.forEach((review, idx) => {
           totalRating += review.rating;
           count++;
           const div = document.createElement('div');
           const formattedDate = getFormattedDate(review.timestamp);
+          // встановлюємо індекс для поетапної анімації
+          div.style.setProperty('--i', idx);
           div.className = 'review';
+          const initials = (review.name || '').split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase();
           div.innerHTML = `
-            <strong>${review.name}</strong>
-            <span class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</span>
-            <span class="review-date">${formattedDate}</span>
-            <p>${review.message}</p>
+            <div class="meta">
+              <div class="avatar" aria-hidden="true">${initials || 'U'}</div>
+              <div class="meta-text">
+                <strong class="name">${review.name}</strong>
+                <div class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</div>
+              </div>
+              <span class="review-date">${formattedDate}</span>
+            </div>
+            <p class="message">${review.message}</p>
             ${review.photoUrl ? `<img src="${review.photoUrl}" alt="Фото від ${review.name}" />` : ''}
             ${review.adminReply ? `<div class="admin-reply"><strong>Адміністратор:</strong><br>${review.adminReply}</div>` : ''}
           `;
