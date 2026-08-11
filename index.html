@@ -329,6 +329,71 @@
       100% { box-shadow: 0 6px 18px rgba(123,44,255,0.28); transform: translateY(0); }
     }
     .avatar { animation: pulseAvatar 3.6s ease-in-out infinite; }
+    /* Add Review button (placed under rating filter) */
+    .open-review-btn {
+      display: block;
+      margin: 14px auto;
+      background: linear-gradient(90deg,#ff7bff,#8b5cff);
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      box-shadow: 0 14px 40px rgba(139,92,255,0.22), inset 0 -4px 20px rgba(255,123,200,0.06);
+      cursor: pointer;
+      font-weight: 700;
+      text-align: center;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      max-width: 420px;
+      width: calc(100% - 36px);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .open-review-btn:hover { transform: translateY(-3px); }
+    .open-review-btn:active { transform: translateY(1px); }
+    .open-review-btn.highlight { animation: pulseGlow 2.4s infinite; }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 14px 36px rgba(139,92,255,0.18), 0 0 0 0 rgba(139,92,255,0.08); }
+      50% { box-shadow: 0 20px 56px rgba(139,92,255,0.28), 0 0 28px 6px rgba(139,92,255,0.06); }
+      100% { box-shadow: 0 14px 36px rgba(139,92,255,0.18), 0 0 0 0 rgba(139,92,255,0.08); }
+    }
+    .modal { display: none; position: fixed; inset: 0; z-index: 1400; }
+    .modal[aria-hidden="false"] { display: block; }
+    .modal-backdrop {
+      position: absolute; inset: 0; background: rgba(2,2,8,0.6);
+      backdrop-filter: blur(6px);
+      z-index: 1400;
+    }
+    .modal-content {
+      position: absolute; left: 50%; top: 6%; transform: translateX(-50%);
+      width: 94%; max-width: 720px; max-height: 88vh; overflow: auto;
+      background: linear-gradient(180deg, rgba(10,6,18,0.96), rgba(6,3,10,0.98));
+      border-radius: 14px; padding: 18px; padding-bottom: 36px; box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      z-index: 1401;
+    }
+    .modal-close { position: absolute; right: 12px; top: 12px; background: transparent; color: #fff; border: none; font-size: 1.1rem; cursor: pointer; }
+
+    @media (max-width: 768px) {
+      .open-review-btn { width: calc(100% - 24px); max-width: none; border-radius: 10px; }
+      /* hide inline form on small screens to save space */
+      #reviewForm { display: none; }
+      /* BUT when modal is open, show the form inside modal */
+      #reviewModal[aria-hidden="false"] #reviewForm { display: block !important; }
+      .modal-content #reviewForm { display: block !important; }
+    }
+
+    /* mobile modal layout (bottom sheet) */
+    @media (max-width: 420px) {
+      .modal-content {
+        position: fixed;
+        left: 0; right: 0; bottom: 0; top: auto;
+        transform: none;
+        width: 100%; max-width: 100%; height: auto; max-height: calc(100vh - 40px);
+        border-radius: 12px 12px 0 0; padding: 14px; box-sizing: border-box;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      /* ensure modal is above virtual keyboard and visible */
+      .modal[aria-hidden="false"] { padding-bottom: env(safe-area-inset-bottom, 16px); }
+    }
   </style>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -349,7 +414,6 @@
       <div class="hint-text">Номер замовлення та PIN-код ви отримуєте після оформлення замовлення.</div>
     </div>
     <input type="text" id="name" placeholder="Ваше ім'я" required autocomplete="name" />
-    <textarea id="message" placeholder="Ваш відгук" required></textarea>
     <label for="rating">Рейтинг (зірки):</label>
     <select id="rating" required>
       <option value="" disabled selected>Оберіть рейтинг</option>
@@ -359,9 +423,19 @@
       <option value="4">4 ★★★★</option>
       <option value="5">5 ★★★★★</option>
     </select>
+    <textarea id="message" placeholder="Ваш відгук" required></textarea>
     <input type="url" id="photoUrl" placeholder="Посилання на фото (опціонально)" />
     <button type="submit">Надіслати</button>
   </form>
+
+  <!-- Modal for form (moves the form element here on mobile) -->
+  <div id="reviewModal" class="modal" role="dialog" aria-hidden="true">
+    <div class="modal-backdrop" id="modalBackdrop"></div>
+    <div class="modal-content" id="modalContent">
+      <button class="modal-close" id="modalClose" aria-label="Закрити">✖</button>
+      <!-- form will be moved here dynamically -->
+    </div>
+  </div>
 
   <div class="stats" id="ratingStats"></div>
   <div class="rating-bar"><div class="rating-fill" id="ratingFill"></div></div>
@@ -375,6 +449,11 @@
     <option value="2">Тільки 2 ★</option>
     <option value="1">Тільки 1 ★</option>
   </select>
+
+  <!-- Add Review button moved here to be under the rating filter -->
+  <div style="text-align:center;">
+    <button id="openReviewBtn" class="open-review-btn highlight" aria-label="Додати відгук">✍️ Додати відгук</button>
+  </div>
 
   <h2>Відгуки</h2>
   <div id="approvedReviews"></div>
@@ -453,6 +532,43 @@
       return '★'.repeat(count) + '☆'.repeat(5 - count);
     }
 
+    // Повертає нормалізований URL (додає https:// якщо відсутній)
+    function normalizeUrl(u) {
+      if (!u) return '';
+      u = u.trim();
+      // Спробувати розпарсити стандартно
+      try {
+        const parsed = new URL(u, window.location.href);
+        // Якщо це Google imgres redirect, беремо imgurl параметр
+        const imgurl = parsed.searchParams.get('imgurl') || parsed.searchParams.get('img_url') || parsed.searchParams.get('mediaurl');
+        if (imgurl) return decodeURIComponent(imgurl);
+        // Якщо вже правильний протокол — повертаємо як є
+        if (/^https?:\/\//i.test(u)) return u;
+        return 'https://' + u;
+      } catch (e) {
+        // fallback: спробуємо витягти imgurl вручну
+        const m = u.match(/[?&]imgurl=([^&]+)/);
+        if (m) {
+          try { return decodeURIComponent(m[1]); } catch (err) { return m[1]; }
+        }
+        if (!/^https?:\/\//i.test(u)) return 'https://' + u;
+        return u;
+      }
+    }
+
+    // Генерує градієнт для аватарки за іменем
+    function avatarGradient(name) {
+      const s = String(name || '').trim();
+      let hash = 0;
+      for (let i = 0; i < s.length; i++) {
+        hash = (hash << 5) - hash + s.charCodeAt(i);
+        hash |= 0;
+      }
+      const hue = Math.abs(hash) % 360;
+      const h2 = (hue + 40) % 360;
+      return `background: linear-gradient(135deg, hsl(${hue} 90% 55%), hsl(${h2} 85% 68%));`;
+    }
+
     function getFormattedDate(timestamp) {
       const date = new Date(timestamp);
       const day = String(date.getDate()).padStart(2, '0');
@@ -494,10 +610,12 @@
           // встановлюємо індекс для поетапної анімації
           div.style.setProperty('--i', idx);
           div.className = 'review';
-          const initials = (review.name || '').split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase();
+          const initials = (review.name || '').split(' ').map(s=>s[0]||'').join('').slice(0,2).toUpperCase();
+          const avatarStyle = avatarGradient(review.name);
+          const photo = normalizeUrl(review.photoUrl || '');
           div.innerHTML = `
             <div class="meta">
-              <div class="avatar" aria-hidden="true">${initials || 'U'}</div>
+              <div class="avatar" aria-hidden="true" style="${avatarStyle}">${initials || 'U'}</div>
               <div class="meta-text">
                 <strong class="name">${review.name}</strong>
                 <div class="stars" title="Рейтинг: ${review.rating}">${stars(review.rating)}</div>
@@ -505,7 +623,7 @@
               <span class="review-date">${formattedDate}</span>
             </div>
             <p class="message">${review.message}</p>
-            ${review.photoUrl ? `<img src="${review.photoUrl}" alt="Фото від ${review.name}" />` : ''}
+            ${photo ? `<img src="${photo}" alt="Фото від ${review.name}" loading="lazy" onerror="this.style.display='none'" />` : ''}
             ${review.adminReply ? `<div class="admin-reply"><strong>Адміністратор:</strong><br>${review.adminReply}</div>` : ''}
           `;
           approvedReviewsDiv.appendChild(div);
@@ -533,6 +651,100 @@
 
     filterRating.addEventListener('change', showApprovedReviews);
     showApprovedReviews();
+
+    // Modal logic: move the form into modal on open, and move back on close
+    const openReviewBtn = document.getElementById('openReviewBtn');
+    const reviewModal = document.getElementById('reviewModal');
+    const modalContent = document.getElementById('modalContent');
+    const modalClose = document.getElementById('modalClose');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const originalFormParent = reviewForm.parentNode;
+    const originalNextSibling = reviewForm.nextSibling;
+
+    function openModal() {
+      // move form into modal
+      if (!modalContent.contains(reviewForm)) {
+        modalContent.appendChild(reviewForm);
+      }
+      reviewModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      // focus first input for accessibility
+      setTimeout(() => { const f = reviewForm.querySelector('input, textarea, select'); if (f) f.focus(); }, 120);
+      // On mobile ensure modal is visible (scroll into view) and move viewport if needed
+      setTimeout(() => {
+        try {
+          modalContent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // extra safe: scroll window to top on small screens
+          if (window.innerWidth <= 420) window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (err) {}
+      }, 220);
+    }
+
+    function closeModal() {
+      // move form back to original place (use original nextSibling if present)
+      if (!originalFormParent.contains(reviewForm)) {
+        try {
+          if (originalNextSibling && originalNextSibling.parentNode === originalFormParent) {
+            originalFormParent.insertBefore(reviewForm, originalNextSibling);
+          } else {
+            originalFormParent.appendChild(reviewForm);
+          }
+        } catch (err) {
+          originalFormParent.appendChild(reviewForm);
+        }
+      }
+      reviewModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    openReviewBtn?.addEventListener('click', openModal);
+    modalClose?.addEventListener('click', closeModal);
+    modalBackdrop?.addEventListener('click', closeModal);
+    // close on Esc
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    // Ensure form is moved back when resizing to large screens
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        if (!originalFormParent.contains(reviewForm)) {
+          try {
+            if (originalNextSibling && originalNextSibling.parentNode === originalFormParent) {
+              originalFormParent.insertBefore(reviewForm, originalNextSibling);
+            } else {
+              originalFormParent.appendChild(reviewForm);
+            }
+          } catch (err) {
+            originalFormParent.appendChild(reviewForm);
+          }
+          reviewModal.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+        }
+      }
+    });
+
+    // On mobile, keep the submit button visible: make it sticky inside modal
+    // and scroll focused inputs into view.
+    if (window.matchMedia('(max-width:420px)').matches) {
+      reviewForm.addEventListener('focusin', (ev) => {
+        const t = ev.target;
+        setTimeout(() => {
+          try {
+            if (modalContent.contains(t)) t.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } catch (err) {}
+        }, 160);
+      });
+    }
+
+    // Make the submit button sticky inside modal for mobile
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @media (max-width:420px){
+        #modalContent form button[type=submit]{
+          position: sticky!important; bottom: 12px; z-index: 1400; display:block; width: calc(100% - 28px); margin: 8px auto 0 auto;
+        }
+      }
+    `;
+    document.head.appendChild(style);
   </script>
 </body>
 </html>
